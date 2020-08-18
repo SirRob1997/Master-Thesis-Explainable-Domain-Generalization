@@ -25,7 +25,8 @@ headsepline, % Uncomment to get a line under the header
 \usepackage{lipsum}
 \SetLipsumParListSurrounders{\begingroup\color{gray}}{\endgroup}	
 
-\usepackage{tikz} % Add the signature figure overlap the text
+\usepackage{pgf, tikz} % Add the signature figure overlap the text
+\usetikzlibrary{arrows, automata}
 % \usepackage[labelformat=simple]{subcaption} % Add multiple subfigures in a figure environment
 % \captionsetup{justification=justified, margin=0pt}
 % \renewcommand\thesubfigure{(\Alph{subfigure})} % change the image numbering and reference link to (A),(B),(C), ...... format

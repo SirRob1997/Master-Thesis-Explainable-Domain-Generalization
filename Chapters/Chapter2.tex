@@ -23,25 +23,58 @@ Machine learning systems often lack \emph{out-of-distribution generalization} wh
 \section{Problem formulation}
 \label{sec:domain_gen_problem}
 
-In supervised learning we are aiming to optimize the predictions $\mathbf{\hat{y}}$ for the values $\mathbf{y} \in \mathcal{Y}$ of a random variable $Y$, when presented with values $\mathbf{x} \in \mathcal{X}$ of a random variable $X$. These predictions are generated with a model predictor $f(\cdot;\boldsymbol{\theta}): \mathcal{X} \rightarrow \mathcal{Y}$ that is parameterized by parameters $\boldsymbol{\theta} \in \Theta$  and is assigning the predictions as $\mathbf{\hat{y}}=f(\cdot;\boldsymbol{\theta})$. To improve our predictions, we utilize a training dataset containing $n$ input-output pairs denoted as $D=\left\{\left(\mathbf{x}_{i}, \mathbf{y}_{i}\right)\right\}_{i=1}^{n}$ where each sample $(\mathbf{x}_i,\mathbf{y}_i)$ is ideally drawn identically and independently distributed (i.i.d.) from a single joint probability distribution $P(X,Y)$. By using a loss term $\mathcal{L} (\mathbf{\hat{y}};\mathbf{y}): \mathcal{Y} \times \mathcal{Y} \rightarrow \mathbb{R}^{+}$, which quantifies how different the prediction $\mathbf{\hat{y}}$ is from the ground truth $\mathbf{y}$, we would like to minimize the risk $R(f) = \mathbb{E}_{(\mathbf{x}, \mathbf{y}) \sim P}[\mathcal{L}(f(\mathbf{x}; \boldsymbol{\theta}), \mathbf{y})]$ of our model. Since we only have access to the distribution $P(X,Y)$ through a proxy in the form of the dataset $D$, we are instead minimizing the empirical risk $R_{\mathrm{emp}}(f)=\frac{1}{n} \sum_{i=1}^n \mathcal{L}\left(f\left(\mathbf{x}_{i};\boldsymbol{\theta}\right), \mathbf{y}_{i}\right)$ by adding up the loss terms of each sample. One common choice for this is the Mean square error (MSE) which is shown in \Cref{eq:mse}. The occurring minimization problem is then often solved through iterative gradient based optimization algorithms \eg \sgd{} \citep{Robbins1951} or \adam \citep{Kingma2015} which perform reasonably well for the non-convex, continuous loss surfaces produced by modern machine learning problems.
+\paragraph{Supervised Learning}
+In supervised learning we are aiming to optimize the predictions $\hat{y}$ for the values $y \in \mathcal{Y}$ of a random variable $Y$, when presented with values $\mathbf{x} \in \mathcal{X}$ of a random variable $X$. These predictions are generated with a model predictor $f(\cdot;\boldsymbol{\theta}): \mathcal{X} \rightarrow \mathcal{Y}$ that is parameterized by parameters $\boldsymbol{\theta} \in \Theta$  and is assigning the predictions as $\hat{y}=f(\cdot;\boldsymbol{\theta})$. To improve our predictions, we utilize a training dataset containing $n$ input-output pairs denoted as $D=\left\{\left(\mathbf{x}_{i}, y_{i}\right)\right\}_{i=1}^{n}$ where each sample $(\mathbf{x}_i,y_i)$ is ideally drawn identically and independently distributed (i.i.d.) from a single joint probability distribution $P(X,Y)$. By using a loss term $\mathcal{L} (\hat{y};y): \mathcal{Y} \times \mathcal{Y} \rightarrow \mathbb{R}^{+}$, which quantifies how different the prediction $\hat{y}$ is from the ground truth $y$, we would like to minimize the risk $R(f) = \mathbb{E}_{(\mathbf{x}, y) \sim P}[\mathcal{L}(f(\mathbf{x}; \boldsymbol{\theta}), y)]$ of our model. Since we only have access to the distribution $P(X,Y)$ through a proxy in the form of the dataset $D$, we are instead minimizing the empirical risk $R_{\mathrm{emp}}(f)=\frac{1}{n} \sum_{i=1}^n \mathcal{L}\left(f\left(\mathbf{x}_{i};\boldsymbol{\theta}\right), y_{i}\right)$ by adding up the loss terms of each sample. One common choice for this is the Mean square error (MSE) which is shown in \Cref{eq:mse}. The occurring minimization problem is then often solved through iterative gradient based optimization algorithms \eg \sgd{} \citep{Robbins1951} or \adam \citep{Kingma2015} which perform reasonably well for the non-convex, continuous loss surfaces produced by modern machine learning problems.
 \begin{equation}
 \label{eq:mse}
-    \text{MSE}=\frac{1}{n} \sum_{i=1}^n (\mathbf{y}_i-f\left(\mathbf{x}_{i};\boldsymbol{\theta}\right))^{2} = \frac{1}{n}\norm{ \mathbf{y}-f\left(\mathbf{x};\boldsymbol{\theta}\right)}_2^2
+    \text{MSE}=\frac{1}{n} \sum_{i=1}^n (y_i-f\left(\mathbf{x}_{i};\boldsymbol{\theta}\right))^{2} = \frac{1}{n}\norm{ \mathbf{y}-f\left(\mathbf{X};\boldsymbol{\theta}\right)}_2^2
 \end{equation}
 On top of that, the model predictor $f$ can be decomposed into two functions as $f=w \circ \phi$ where $\phi: \mathcal{X} \rightarrow \mathcal{Z}$ is an embedding into a feature space, hence sometimes called the feature extractor, and $w: \mathcal{Z} \rightarrow \mathcal{Y}$ which is sometimes called the classifier since it is a prediction from the feature space to the output space \citep{gulrajani2020search, MotiianPAD17}. This allows for a more concise mathematical notation.
 
-The problem of \emph{Domain generalization} builds on top of this framework, where now we have a set of training domains $\mathcal{S} = \left\{\mathcal{D}_{1}, \ldots, \mathcal{D}_{d_{\mathrm{tr}}}\right\}$ with $d \in\left\{1, \ldots, d_{\mathrm{tr}}\right\}$, where each $d$-th domain $\mathcal{D}_d$ has a dataset $D^{d}=\left\{\left(\mathbf{x}_{i}^{d}, \mathbf{y}_{i}^{d}\right)\right\}_{i=1}^{n_{d}}$ containing $n_d$ i.i.d. samples from individual distributions $P\left(X^{d}, Y^{d}\right)$. Here, $\mathbf{x}_i^d$ is the $i$-th sample for domain $\mathcal{D}_d$ and $\mathbf{y}_i^d \in\{1,2, \ldots, c\}$ is the corresponding class label \citep{wang2020learning}. From these domains, we try to learn generic feature representations agnostic to domain changes to improve model performance \citep{seo2019learning}. Simply, we try to do \emph{out-of-distribution generalization} where our model aims to achieve good performance for an unseen test domain $d_{\mathrm{te}}=d_{\mathrm{tr}}+1$ based on statistical invariances across the observed training (source) and testing (target) domains \citep{gulrajani2020search, huang2020selfchallenging}. Hence, we try to minimize the expected target risk of our model as shown in \Cref{eq:domain_risk}.
+\paragraph{Domain Generalization}
+The problem of \emph{Domain generalization} (DG) builds on top of this framework, where now we have a set of training domains $\mathcal{S} = \left\{\mathcal{D}^{1}, \ldots, \mathcal{D}^{d_{\mathrm{tr}}}\right\}$ with $d \in\left\{1, \ldots, d_{\mathrm{tr}}\right\}$, where each $d$-th domain $\mathcal{D}^d$ has a dataset $D^{d}=\left\{\left(\mathbf{x}_{i}^{d}, y_{i}^{d}\right)\right\}_{i=1}^{n_{d}}$ containing $n_d$ i.i.d. samples from individual distributions $P\left(X^{d}, Y^{d}\right)$. Here, $\mathbf{x}_i^d \in \mathbb{R}^{m}$ is the $i$-th sample for domain $\mathcal{D}^d$ representing a $m$-dimensional feature vector and $y_i^d \in\{c_1,\dots , c_K\}$ is the corresponding class label \citep{wang2020learning}. From these domains, we try to learn generic feature representations agnostic to domain changes to improve model performance \citep{seo2019learning}. Simply, we try to do \emph{out-of-distribution generalization} where our model aims to achieve good performance for an unseen test domain $d_\mathrm{te}$ sampled from the set of unseen domains $\mathcal{U} = \left\{\mathcal{D}^{1}, \ldots, \mathcal{D}^{d_{\mathrm{max}}}\right\}$ based on statistical invariances across the observed training (source) and testing (target) domains \citep{gulrajani2020search, huang2020selfchallenging}. Hence, we try to minimize the expected target risk of our model as shown in \Cref{eq:domain_risk}.
 \begin{equation}
 \label{eq:domain_risk}
-    R(f) = \mathbb{E}_{(\mathbf{x}^{d_{\mathrm{te}}}, \mathbf{y}^{d_{\mathrm{te}}}) \sim P}[\mathcal{L}(f(\mathbf{x}^{d_{\mathrm{te}}}; \boldsymbol{\theta}), \mathbf{y}^{d_{\mathrm{te}}})]
+    R(f) = \mathbb{E}_{(\mathbf{x}^{d_{\mathrm{te}}}, y^{d_{\mathrm{te}}}) \sim P}[\mathcal{L}(f(\mathbf{x}^{d_{\mathrm{te}}}; \boldsymbol{\theta}), y^{d_{\mathrm{te}}})]
 \end{equation}
 One simple approach is to apply the empirical risk minimization seen previously to the domain generalization task as shown in \Cref{eq:domain_risk_emp}, where we hope that minimizing the empirical risk over all source domains in $\mathcal{S}$ achieves good generalization to the target domain.
 \begin{equation}
 \label{eq:domain_risk_emp}
-    R_\mathrm{emp}(f) = \frac{1}{d_\mathrm{tr}} \sum_{d=1}^{d_\mathrm{tr}} \frac{1}{n_d} \sum_{i=1}^{n_d} \mathcal{L}(f(\mathbf{x}_i^{d}; \boldsymbol{\theta}), \mathbf{y}_i^{d})
+    R_\mathrm{emp}(f) = \frac{1}{d_\mathrm{tr}} \sum_{d=1}^{d_\mathrm{tr}} \frac{1}{n_d} \sum_{i=1}^{n_d} \mathcal{L}(f(\mathbf{x}_i^{d}; \boldsymbol{\theta}), y_i^{d})
 \end{equation}
-The difference of this approach when compared to ordinary supervised learning is summarized on a high-level in \Cref{tab:learning_setups}. 
+The difference of this approach when compared to ordinary supervised learning is summarized on a high-level in \Cref{tab:learning_setups}. It may be helpful to think about a meta-distribution $\mathfrak{D}$ (real-world) generating source domains $\mathcal{D}^d_\mathcal{S}$ and unseen testing domains $\mathcal{D}^d_\mathcal{U}$ as shown in \Cref{fig:meta_domain}.
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+            > = stealth, % arrow head style
+            shorten > = 1pt, % don't touch arrow head to node
+            auto,
+            node distance = 3cm, % distance between nodes
+            semithick % line style
+        ]
+    \tikzstyle{every state}=[
+            draw = black,
+            thick,
+            fill = white,
+            minimum size = 1cm
+        ]
 
+        \node[state] (meta) at (0,0) {\Large{$\mathfrak{D}$}};
+        \node[state] (d1) at (-3,-2) {$\mathcal{D}^1_\mathcal{S}$};
+        \node[state] (d2) at (-1,-2) {$\mathcal{D}^{d_\mathrm{tr}}_\mathcal{S}$};
+        \node[state] (d3) at (1,-2) {$\mathcal{D}^1_\mathcal{U}$};
+        \node[state] (d4) at (3,-2) {$\mathcal{D}^{d_\mathrm{te}}_\mathcal{U}$};
+
+        \path[->] (meta) edge node {} (d1);
+        \path[->] (meta) edge node {} (d2);
+        \path[->] (meta) edge node {} (d3);
+        \path[->] (meta) edge node {} (d4);
+        \path (d1) -- node[auto=false]{\ldots} (d2);
+        \path (d3) -- node[auto=false]{\ldots} (d4);
+    \end{tikzpicture}
+    \caption[Meta-distribution $\mathfrak{D}$ generating source and unseen domains]{Meta-distribution $\mathfrak{D}$ generating source and unseen domains adapted from: \citep{albuquerque2019generalizing}}
+    \label{fig:meta_domain}
+\end{figure}
 
 \begin{table}[t]
     \centering
@@ -64,7 +97,11 @@ The difference of this approach when compared to ordinary supervised learning is
     \label{tab:learning_setups}
 \end{table}
 
-There exist subtle differences within this task which are called \emph{single-} or \emph{multi-source domain generalization}. While multi-source domain generalization refers to the standard setting we have just outlined, single-source domain generalization is a more generic formulation \citep{zunino2020explainable}. Instead of relying on multiple training domains to learn models which generalize better, single-source domain generalization aims at learning these representations with access to only one source distribution. Hence, our training domains are restricted to $\mathcal{S} = \left\{\mathcal{D}_{1}\right\}$ with $d \in\left\{1\right\}$, described by one dataset $D^{1}=\left\{\left(\mathbf{x}_{i}^{1}, \mathbf{y}_{i}^{1}\right)\right\}_{i=1}^{n_{1}}$ and modeling a single source distribution $P\left(X^{1}, Y^{1}\right)$. This is different from the ordinary supervised learning setup since we want to analyze the performance of the model under a clear domain-shift (\ie out-of-distribution generalization). Note, that strong regularization methods will also perform well on this scenario. These cross-overs and related techniques are described in the following section.
+\paragraph{Homogeneous and Heterogeneous}
+Sometimes, domain generalization is also divided into \emph{homogeneous} and \emph{heterogeneous} subtasks. In homogeneous DG we assume that all domains share the same label space $\mathcal{Y}^x = \mathcal{Y}^z = \mathcal{Y}^{d_\mathrm{te}}$, $\forall x, z \in \left\{1, \ldots, d_{\mathrm{tr}}\right\}$. On the contrary, the more challenging heterogeneous DG allows for different label spaces $\mathcal{Y}^x \neq \mathcal{Y}^z \neq \mathcal{Y}^{d_\mathrm{te}}$ which can even be completely disjoint \citep{LiZYLSH19}. For this work we assume the homogeneous setting.
+
+\paragraph{Single- and Multi-Source}
+There exist subtle differences within this task which are called \emph{single-} or \emph{multi-source domain generalization}. While multi-source domain generalization refers to the standard setting we have just outlined, single-source domain generalization is a more generic formulation \citep{zunino2020explainable}. Instead of relying on multiple training domains to learn models which generalize better, single-source domain generalization aims at learning these representations with access to only one source distribution. Hence, our training domains are restricted to $\mathcal{S} = \left\{\bigcup_{i=1}^{d_\mathrm{tr}}\mathcal{D}^{i}\right\}$, described by one dataset $D=\left\{\left(\mathbf{x}_{i}, y_{i}\right)\right\}_{i=1}^{n_{1}}$ and modeling a single source distribution $P\left(X, Y\right)$. This is different from the ordinary supervised learning setup since we want to analyze the performance of the model under a clear domain-shift (\ie out-of-distribution generalization). Note, that strong regularization methods will also perform well on this scenario. These cross-overs and related techniques are described in the following section.
 
 \section{Related concepts and their differences}
 
@@ -79,7 +116,7 @@ Generally, deploying some of these methods when aiming for out-of-distribution g
 
 \subsection{Domain Adaption}
 
-\emph{Domain adaption} is often mentioned as a closely related task in domain generalization literature \citep{MotiianPAD17, VolpiM19, QiaoZP20}. When compared, domain adaption has additional access to an unlabeled dataset from the target domain \citep{mancini2020, Csurka17}. Formally, aside from the set of source domains $\mathcal{S}$ and the domain datasets $D^d$, as outline in \Cref{sec:domain_gen_problem}, we have access to target samples $\mathcal{T} = \left\{\mathbf{x}_{1}^{d_\mathrm{te}},\dots,\mathbf{x}_{n_{d_{\mathrm{te}}}}^{d_\mathrm{te}}\right\}$ that are from the target domain $\mathbf{x}_j^{d_{ \mathrm{te}}} \sim P(X^{d_{ \mathrm{te}}},Y^{d_{ \mathrm{te}}})$ but their labels remain unknown in training since we want to predict them during testing. As a result, domain generalization is considered to be the harder problem of the two. This difference is also shown in \Cref{tab:learning_setups}.
+\emph{Domain adaption} (DA) is often mentioned as a closely related task in domain generalization literature \citep{MotiianPAD17, VolpiM19, QiaoZP20}. When compared, domain adaption has additional access to an unlabeled dataset from the target domain \citep{mancini2020, Csurka17}. Formally, aside from the set of source domains $\mathcal{S}$ and the domain datasets $D^d$, as outline in \Cref{sec:domain_gen_problem}, we have access to target samples $\mathcal{T} = \left\{\mathbf{x}_{1}^{d_\mathrm{te}},\dots,\mathbf{x}_{n_{d_{\mathrm{te}}}}^{d_\mathrm{te}}\right\}$ that are from the target domain $\mathbf{x}_j^{d_{ \mathrm{te}}} \sim P(X^{d_{ \mathrm{te}}},Y^{d_{ \mathrm{te}}})$ but their labels remain unknown in training since we want to predict them during testing. As a result, domain generalization is considered to be the harder problem of the two. This difference is also shown in \Cref{tab:learning_setups}.
 
 Earlier methods in this space deploy hand-crafted features to reduce the difference between the source and the target domains \citep{ManciniPBC018}. Like that, \emph{instance-based methods} try to re-weight source samples according to target similarity \citep{GongGS13, HuangSGBS06, YamadaSR12} or \emph{feature-based methods} try to learn a common subspace \citep{FernandoHST13, GongSSG12, LongD0SGY13, BaktashmotlaghHLS13}. More recent works focus on \emph{deep domain adaption} based on deep architectures where domain invariant features are learned utilizing supervised neural networks \citep{BousmalisTSKE16, CarlucciPCRB17, GaninL15, GhifaryKZBL16}, autoencoders \citep{ZengOWW14}, or generative adversarial networks (GANs) \citep{BousmalisSDEK17, ShrivastavaPTSW17, TzengHSD17}. These deep neural network based architectures significantly outperform the approaches for hand-crafted features \citep{ManciniPBC018}.
 
@@ -89,73 +126,73 @@ Even though domain adaptation and domain generalization both try to reducing dat
 
 No idea where to fit these yet: 
 
+2017: 
+\citep{LiYSH17}
+
+2018: 
+\citep{NiuLXC18}
+
+2019: 
+\citep{CarlucciDBCT19}
 \citep{VolpiM19} 
-\citep{QiaoZP20}
-\citep{MatsuuraH20}
 \citep{yao2019adversarial}
+\citep{arjovsky2019invariant}
+\citep{seo2019learning}
+
+2020: 
+\citep{QiaoZP20}
 \citep{bellot2020generalization}
 \citep{jin2020feature}
 \citep{somavarapu2020frustratingly}
 \citep{deng2020representation}
 \citep{mahajan2020domain}
-\citep{ilse2019diva}
-\citep{arjovsky2019invariant}
-
-Autoencoder based Methods
-\citep{LiPWK18}
-
-
-
-
-
-Deep Neural Network based Methods
-\citep{seo2019learning}
 \citep{wang2020learning}
 \citep{du2020learning}
 \citep{huang2020selfchallenging}
 \citep{zhou2020learning}
 \citep{Jia_2020_CVPR_SSDG}
-\citep{LiZYLSH19}
-\citep{CarlucciDBCT19}
-\citep{LiTGLLZT18}
-\citep{DingF18}
-\citep{MotiianPAD17}
-\citep{LiYSH17}
 \citep{piratla2020efficient}
 \citep{RyuK0L20}
-\citep{RahmanFBS20}
-\citep{ShankarPCCJS18}
 
 
-Metric Learning based Methods
-\citep{FangXR13}
 
 
-Support vector machine based Methods
-\citep{NiuLXC18}
-\citep{XuLNX14}
+
 
 Since literature in the domain generalization space is very broad, we utilized Appendix A in \citet{gulrajani2020search} for an overview and individually added additional works and information where necessary.  
 
 \subsection{Learning invariant features}
 
-Some of the earliest works on learning invariant features were \emph{kernel methods} applied by \citet{MuandetBS13}  where they look for a feature transformation that minimizes the across-domain dissimilarity between transformed feature distributions while preserving the functional relationship between original features and targets. In recent years, there have been approaches following a similar kernel based approach \citep{Hu0CC19, LiGTLT18, GhifaryBKZ17}, sometimes tackling domain adaption and domain generalization at the same time.
+Some of the earliest works on learning invariant features were \emph{kernel methods} applied by \citet{MuandetBS13}  where they look for a feature transformation that minimizes the across-domain dissimilarity between transformed feature distributions while preserving the functional relationship between original features and targets. In recent years, there have been approaches following a similar kernel based approach \citep{LiGTLT18, LiTGLLZT18}, sometimes while maximizing class separability \citep{Hu0CC19, GhifaryBKZ17}. As an early method, \citet{FangXR13} introduce Unbiased Metric Learning (UML) with a SVM metric that enforces the neighborhood of samples to contain samples with the same class label but from other training domains.
 
-After that, \citet{GaninUAGLLML16} introduced Domain Adversarial Neural Networks (DANNs) utilizing neural network architectures to learn domain-invariant feature representations by adding a gradient reversal layer. Recently, their approach got extended to support statistical dependence between domains and class labels \citep{AkuzawaIM19} or considering one-versus-all adversaries to minimize pairwise divergences between source distributions \citep{albuquerque2019generalizing}. 
+After that, \citet{GaninUAGLLML16} introduced Domain Adversarial Neural Networks (DANNs) utilizing neural network architectures to learn domain-invariant feature representations by adding a gradient reversal layer. Recently, their approach got extended to support statistical dependence between domains and class labels \citep{AkuzawaIM19} or considering one-versus-all adversaries to minimize pairwise divergences between source distributions \citep{albuquerque2019generalizing}. \citet{MotiianPAD17} use a siamese architecture to learn a feature transformation which tries to achieve semantical alignment of visual domains while maximally separating them. Other methods are also matching the feature covariance across source domains \citep{RahmanFBS20}.
 
-\subsection{Sharing parameters}
+\citet{LiPWK18} deploy adversarial autoencoders with maximum mean discrepancy (MMD) \citep{GrettonBRSS12} to align the source distributions, \ie for distributions $P$, $Q$ and a feature map $\varphi: \mathcal{X} \rightarrow \mathcal{H}$ where $\mathcal{H}$ is a reproducing kernel Hilbert space (RKHS) this measure is defined as \Cref{eq:mmd}.
+\begin{equation}
+\label{eq:mmd}
+    \operatorname{MMD}(P, Q)=\left\|\mathbb{E}_{X \sim P}[\varphi(X)]-\mathbb{E}_{Y \sim Q}[\varphi(Y)]\right\|_{\mathcal{H}}
+\end{equation}
+\citet{ilse2019diva} extend the variational autoencoder \citep{KingmaW13} by introducing latent representations for domains $\mathcal{Z}_d$, classes $\mathcal{Z}_y$ and residual variations $\mathcal{Z}_x$. \citet{LiZYLSH19} use episodic training \ie they train a domain agnostic feature extractor $\phi$ and classifier $w$ by mismatching them with an equivalent trained on a specific domain in combinations $(\phi^{d_1}, w, \mathbf{x}^{d_2}_i)$ and $(\phi, w^{d_1}, \mathbf{x}^{d_2}_i)$ and letting them predict data outside of the trained domain $d_1 \neq d_2$. \citet{li2020sequential} use a lifelong sequential learning strategy.
 
-The first work to pose the problem of domain generalization and analyze it was \citet{BlanchardLS11}. They  \citep{an2019generalization} \citep{blanchard2017domain}
+\citet{MatsuuraH20} use . 
 
-\citep{KhoslaZMET12} \citep{GhifaryKZB15}
+\subsection{Model ensembling}
+
+Some methods try to associate model parameters with each of the training domains and combine them with shared parameters in a meaningful matter to improve generalization to the test domain. Often, the amount of models in these type of architectures grow linearly with the number of source domains. The first work to pose the problem of domain generalization and analyze it was \citet{BlanchardLS11}. In there, they use classifiers for each sample $\mathbf{x}^d$  denoted as $f(\mathbf{x}^d,\mu^d)$ where $\mu^d$ corresponds to a kernel mean embedding \citep{MuandetFSS17}. For theoretical analysis on such methods please see \citet{an2019generalization} and \citet{blanchard2017domain}. Later on, \citet{KhoslaZMET12} combine global weights $w$ with local domain biases $\Delta^d$ to learn one max-margin linear classifier (SVM) per domain as $w^d = w + \Delta^d$ and finally combine them, which has recently been extended to neural network settings by adding an additional dimension describing the training domains to the parameter tensors \citep{LiYSH17}. \citet{GhifaryKZB15} propose a Multi-task Autoencoder (MTAE) with shared parameters to the hidden state and domain-specific parameters for each of the training domains. Further, \citet{ManciniBCR18} use domain-specific batch-normalization \citep{IoffeS15} layers and then linearly combine them using a softmax domain classifier. Other works linearly combine domain-specific predictors \citep{ManciniBC018}, or use more elaborate aggregation strategies to combine these \citep{DInnocenteC18}. \citet{DingF18} use multiple
+domain-specific deep neural networks with a structured low-rank constraint and a domain-invariant deep neural network to generalize to the target domain. There have also been works which assign weights to minibatches depending on their respective error to the training distributions \citep{HuNSS18, sagawa2019distributionally}.
+
 
 \subsection{Meta-learning}
 \citet{LiYSH18} propose a Model-Agnostic Meta-Learning (MAML) algorithm which is able to quickly learn new tasks. \citet{FinnAL17} adapt this algorithm for domain generalization such that we can quickly adapt to new domains by utilizing the meta-optimization objective which ensures that steps to improve training domain performance should also improve testing domain performance. Both approaches are not bound to a specific architecture and can therefore be deployed for a wide variety of learning tasks. These approaches recently got extended by two regularizers that encourage general knowledge about inter-class relationships and domain-independent class-specific cohesion \citep{DouCKG19}, to instances of domain generalization where the label space varies from domain to domain \citep{LiYZH19}, or meta-learning a regularizer which encourages across-domain performance \citep{BalajiSC18}.
 
 \subsection{Data Augmentation}
-\emph{Data Augmentation} remains a competitive method for generalizing to unseen domains \citep{zhang2019unseen}. However, to deploy an efficient procedure for that, human experts need to consider the data at hand to develop a useful routine \citep{gulrajani2020search}. Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a method to merge samples from different domains \citep{XuZNLWTZ20, yan2020improve, WangLK20, mancini2020}. Other works have also tried removing textural information from images \citep{WangHLX19} or shifting it more towards shapes \citep{nam2019reducing, asadi2019shape}. \citet{CarlucciDBCT19} used jigsaw puzzles of image patches as a classification task to show that this improves domain generalization while \citet{VolpiNSDMS18} demonstrate that adversarial data augmentation on a single domain is sufficient. Several methods also utilize GANs to augment the available training data  \citep{RahmanFBS19, ZhouYHX20}.
+\emph{Data Augmentation} remains a competitive method for generalizing to unseen domains \citep{zhang2019unseen}. However, to deploy an efficient procedure for that, human experts need to consider the data at hand to develop a useful routine \citep{gulrajani2020search}. Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a method to merge samples from different domains \citep{XuZNLWTZ20, yan2020improve, WangLK20, mancini2020}. Other works have also tried removing textural information from images \citep{WangHLX19} or shifting it more towards shapes \citep{nam2019reducing, asadi2019shape}. \citet{CarlucciDBCT19} used jigsaw puzzles of image patches as a classification task to show that this improves domain generalization while \citet{VolpiNSDMS18} demonstrate that adversarial data augmentation on a single domain is sufficient. Several methods also utilize GANs to augment the available training data  \citep{RahmanFBS19, ZhouYHX20, ShankarPCCJS18}. 
 
 \section{Common Datasets}
+
+\subsection{Rotated MNIST}
+
+\subsection{Colored MNIST}
 
 \subsection{Office-Home}
 \citet{VenkateswaraECP17}
@@ -177,6 +214,9 @@ The first work to pose the problem of domain generalization and analyze it was \
 \subsection{ImageNet-R}
 \citet{hendrycks2020faces}
 
+\subsection{Terra Incognita}
+
+\subsection{DomainNet}
 
 
 
