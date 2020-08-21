@@ -20,13 +20,15 @@ headsepline, % Uncomment to get a line under the header
 \usepackage{wrapfig} % Add enbedded figure in the text
 \usepackage{textcomp}
 \usepackage{cleveref}
-
+\usepackage{siunitx}
+\sisetup{group-minimum-digits = {3}}
 
 \usepackage{lipsum}
 \SetLipsumParListSurrounders{\begingroup\color{gray}}{\endgroup}	
 
 \usepackage{pgf, tikz} % Add the signature figure overlap the text
 \usetikzlibrary{arrows, automata}
+\usepackage{tabularx, array}
 % \usepackage[labelformat=simple]{subcaption} % Add multiple subfigures in a figure environment
 % \captionsetup{justification=justified, margin=0pt}
 % \renewcommand\thesubfigure{(\Alph{subfigure})} % change the image numbering and reference link to (A),(B),(C), ...... format
@@ -51,6 +53,15 @@ headsepline, % Uncomment to get a line under the header
 \newcommandx{\improvement}[2][1=]{\todo[linecolor=violet,backgroundcolor=violet!25,bordercolor=violet,#1]{#2}}
 \newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
 \newcommandx{\draft}[2][1=]{\todo[inline,#1]{#2}}
+
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%\renewcommand\tabularxcolumn[1]{m{#1}}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+\newcolumntype{C}{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}c}
+
+\usepackage{makecell}
 
 
 \addbibresource{thesis.bib} % The filename of the bibliography
