@@ -35,7 +35,7 @@ headsepline, % Uncomment to get a line under the header
 
 \usepackage{mathpazo} % Use the Palatino font by default
 % \usepackage[backend=bibtex,style=alphabetic,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
-\usepackage[sortcites, natbib=true,maxbibnames=99,giveninits=true, backend=biber]{biblatex}
+\usepackage[sortcites,doi=false,isbn=false,url=false, natbib=true,maxbibnames=99,giveninits=true, backend=biber]{biblatex}
 \usepackage[autostyle=true]{csquotes} 
 \AtBeginEnvironment{enquote}{\itshape} % change the quote words to italics style
 \usepackage{rotating} % Required to add rotated big tables
@@ -57,7 +57,7 @@ headsepline, % Uncomment to get a line under the header
 
 \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 \newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
-%\renewcommand\tabularxcolumn[1]{m{#1}}
+\renewcommand\tabularxcolumn[1]{b{#1}}
 \newcolumntype{Y}{>{\centering\arraybackslash}X}
 \newcolumntype{C}{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}c}
 

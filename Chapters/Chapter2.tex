@@ -16,6 +16,7 @@
 \newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
 \newcommand{\minus}{\raisebox{.4\height}{\scalebox{.8}{-}}}
 \newcommand{\imagequadsize}{1cm}
+\newcommand{\domainsize}[1]{\scriptsize{#1}}
 
 
 \chapter{Domain Generalization} % Main chapter title
@@ -131,115 +132,102 @@ Even though domain adaptation and domain generalization both try to reducing dat
 
 \section{Previous Works}
 
-No idea where to fit these yet: 
+Most commonly, work in \emph{domain generalization} can be divided into methods which try to \emph{learn invariant features}, combine domain specific models in a process called \emph{model ensembling}, pursue \emph{meta-learning}, or utilize \emph{data augmentation} to generate new domains or more robust representations.
 
-2018: 
-\citep{NiuLXC18}
-
-2019: 
-\citep{VolpiM19} 
-\citep{yao2019adversarial}
-\citep{arjovsky2019invariant}
-\citep{seo2019learning}
-
-2020: 
-\citep{QiaoZP20}
-\citep{bellot2020generalization}
-\citep{jin2020feature}
-\citep{somavarapu2020frustratingly}
-\citep{deng2020representation}
-\citep{mahajan2020domain}
-\citep{wang2020learning}
-\citep{du2020learning}
-\citep{huang2020selfchallenging}
-\citep{zhou2020learning}
-\citep{Jia_2020_CVPR_SSDG}
-\citep{piratla2020efficient}
-\citep{RyuK0L20}
-\citep{zunino2020explainable}
-
-
-
-
-
-
-Since literature in the domain generalization space is very broad, we utilized Appendix A in \citet{gulrajani2020search} for an overview and individually added additional works and information where necessary.  
+Since literature in the domain generalization space is very broad, we utilized Appendix A in \citet{gulrajani2020search} for an overview and to identify relevant literature while individually adding additional works and more detailed information where necessary.  
 
 \subsection{Learning invariant features}
 
+Methods with this approach typically try to minimize the difference between source domains. They assume that with this approach the features will be domain-invariant and therefore will have a good performance for unseen testing domains \citep{huang2020selfchallenging}.
+
 Some of the earliest works on learning invariant features were \emph{kernel methods} applied by \citet{MuandetBS13}  where they look for a feature transformation that minimizes the across-domain dissimilarity between transformed feature distributions while preserving the functional relationship between original features and targets. In recent years, there have been approaches following a similar kernel based approach \citep{LiGTLT18, LiTGLLZT18}, sometimes while maximizing class separability \citep{Hu0CC19, GhifaryBKZ17}. As an early method, \citet{FangXR13} introduce Unbiased Metric Learning (UML) with a SVM metric that enforces the neighborhood of samples to contain samples with the same class label but from other training domains.
 
-After that, \citet{GaninUAGLLML16} introduced Domain Adversarial Neural Networks (DANNs) utilizing neural network architectures to learn domain-invariant feature representations by adding a gradient reversal layer. Recently, their approach got extended to support statistical dependence between domains and class labels \citep{AkuzawaIM19} or considering one-versus-all adversaries to minimize pairwise divergences between source distributions \citep{albuquerque2019generalizing}. \citet{MotiianPAD17} use a siamese architecture to learn a feature transformation which tries to achieve semantical alignment of visual domains while maximally separating them. Other methods are also matching the feature covariance across source domains \citep{RahmanFBS20}.
+After that, \citet{GaninUAGLLML16} introduced Domain Adversarial Neural Networks (DANNs) utilizing neural network architectures to learn domain-invariant feature representations by adding a gradient reversal layer. Recently, their approach got extended to support statistical dependence between domains and class labels \citep{AkuzawaIM19} or considering one-versus-all adversaries to minimize pairwise divergences between source distributions \citep{albuquerque2019generalizing}. \citet{MotiianPAD17} use a siamese architecture to learn a feature transformation which tries to achieve semantical alignment of visual domains while maximally separating them. Other methods are also matching the feature covariance across source domains \citep{RahmanFBS20} or take an causal interpretation to match representations of features \citep{mahajan2020domain}. \citet{huang2020selfchallenging} have also shown that self-challenging (\ie dropping features with high gradient values at each epoch) works very well despite its simplicity. 
 
 \citet{MatsuuraH20} use clustering techniques to split single-source domain generalization into different domains and then train a domain-invariant feature extractor via adversarial
-learning. 
+learning. Other works have also deployed similar approaches based of adversarial strategies \citep{deng2020representation, Jia_2020_CVPR_SSDG}.
 
 \citet{LiPWK18} deploy adversarial autoencoders with maximum mean discrepancy (MMD) \citep{GrettonBRSS12} to align the source distributions, \ie for distributions $P$, $Q$ and a feature map $\varphi: \mathcal{X} \rightarrow \mathcal{H}$ where $\mathcal{H}$ is a reproducing kernel Hilbert space (RKHS) this measure is defined as \Cref{eq:mmd}.
 \begin{equation}
 \label{eq:mmd}
     \operatorname{MMD}(P, Q)=\left\|\mathbb{E}_{X \sim P}[\varphi(X)]-\mathbb{E}_{Y \sim Q}[\varphi(Y)]\right\|_{\mathcal{H}}
 \end{equation}
-\citet{ilse2019diva} extend the variational autoencoder \citep{KingmaW13} by introducing latent representations for domains $\mathcal{Z}_d$, classes $\mathcal{Z}_y$ and residual variations $\mathcal{Z}_x$. \citet{LiZYLSH19} use episodic training \ie they train a domain agnostic feature extractor $\phi$ and classifier $w$ by mismatching them with an equivalent trained on a specific domain in combinations $(\phi^{d_1}, w, \mathbf{x}^{d_2}_i)$ and $(\phi, w^{d_1}, \mathbf{x}^{d_2}_i)$ and letting them predict data outside of the trained domain $d_1 \neq d_2$. \citet{li2020sequential} use a lifelong sequential learning strategy.
+\citet{ilse2019diva} extend the variational autoencoder \citep{KingmaW13} by introducing latent representations for domains $\mathcal{Z}_d$, classes $\mathcal{Z}_y$ and residual variations $\mathcal{Z}_x$. Further, \citet{LiZYLSH19} use episodic training \ie they train a domain agnostic feature extractor $\phi$ and classifier $w$ by mismatching them with an equivalent trained on a specific domain in combinations $(\phi^{d_1}, w, \mathbf{x}^{d_2}_i)$ and $(\phi, w^{d_1}, \mathbf{x}^{d_2}_i)$ and letting them predict data outside of the trained domain $d_1 \neq d_2$. \citet{piratla2020efficient} also learn domain specific and common components but the domain specific parts are discarded after training. \citet{li2020sequential} deploy a lifelong sequential learning strategy.
 
 \subsection{Model ensembling}
 
-Some methods try to associate model parameters with each of the training domains and combine them with shared parameters in a meaningful matter to improve generalization to the test domain. Often, the amount of models in these type of architectures grow linearly with the number of source domains. The first work to pose the problem of domain generalization and analyze it was \citet{BlanchardLS11}. In there, they use classifiers for each sample $\mathbf{x}^d$  denoted as $f(\mathbf{x}^d,\mu^d)$ where $\mu^d$ corresponds to a kernel mean embedding \citep{MuandetFSS17}. For theoretical analysis on such methods please see \citet{an2019generalization} and \citet{blanchard2017domain}. Later on, \citet{KhoslaZMET12} combine global weights $w$ with local domain biases $\Delta^d$ to learn one max-margin linear classifier (SVM) per domain as $w^d = w + \Delta^d$ and finally combine them, which has recently been extended to neural network settings by adding an additional dimension describing the training domains to the parameter tensors \citep{LiYSH17}. \citet{GhifaryKZB15} propose a Multi-task Autoencoder (MTAE) with shared parameters to the hidden state and domain-specific parameters for each of the training domains. Further, \citet{ManciniBCR18} use domain-specific batch-normalization \citep{IoffeS15} layers and then linearly combine them using a softmax domain classifier. Other works linearly combine domain-specific predictors \citep{ManciniBC018}, or use more elaborate aggregation strategies to combine these \citep{DInnocenteC18}. \citet{DingF18} use multiple
-domain-specific deep neural networks with a structured low-rank constraint and a domain-invariant deep neural network to generalize to the target domain. There have also been works which assign weights to minibatches depending on their respective error to the training distributions \citep{HuNSS18, sagawa2019distributionally}.
+Some methods try to associate model parameters with each of the training domains and combine them, often together with shared parameters, in a meaningful matter to improve generalization to the test domain. Commonly, the amount of models in these type of architectures grow linearly with the number of source domains. 
 
+The first work to pose the problem of domain generalization and analyze it was \citet{BlanchardLS11}. In there, they use classifiers for each sample $\mathbf{x}^d$  denoted as $f(\mathbf{x}^d,\mu^d)$ where $\mu^d$ corresponds to a kernel mean embedding \citep{MuandetFSS17}. For theoretical analysis on such methods please see \citet{an2019generalization} and \citet{blanchard2017domain}. Later on, \citet{KhoslaZMET12} combine global weights $w$ with local domain biases $\Delta^d$ to learn one max-margin linear classifier (SVM) per domain as $w^d = w + \Delta^d$ and finally combine them, which has recently been extended to neural network settings by adding an additional dimension describing the training domains to the parameter tensors \citep{LiYSH17}. \citet{GhifaryKZB15} propose a Multi-task Autoencoder (MTAE) with shared parameters to the hidden state and domain-specific parameters for each of the training domains. Further, \citet{ManciniBCR18} use domain-specific batch-normalization \citep{IoffeS15} layers and then linearly combine them using a softmax domain classifier. Other works utilize other domain specific normalization techniques \citep{seo2019learning}, linearly combine domain-specific predictors \citep{ManciniBC018}, or use more elaborate aggregation strategies to combine these \citep{DInnocenteC18}. \citet{DingF18} use multiple
+domain-specific deep neural networks with a structured low-rank constraint and a domain-invariant deep neural network to generalize to the target domain. There have also been works which assign weights to minibatches depending on their respective error to the training distributions \citep{HuNSS18, sagawa2019distributionally}. \citet{jin2020feature} use attention mechanisms to allign the features of the different training domains.
 
 \subsection{Meta-learning}
- \citet{FinnAL17} propose a Model-Agnostic Meta-Learning (MAML) algorithm which is able to quickly learn new tasks. \citet{LiYSH18} adapt this algorithm for domain generalization such that we can quickly adapt to new domains by utilizing the meta-optimization objective which ensures that steps to improve training domain performance should also improve testing domain performance. Both approaches are not bound to a specific architecture and can therefore be deployed for a wide variety of learning tasks. These approaches recently got extended by two regularizers that encourage general knowledge about inter-class relationships and domain-independent class-specific cohesion \citep{DouCKG19}, to instances of domain generalization where the label space varies from domain to domain \citep{LiYZH19}, or meta-learning a regularizer which encourages across-domain performance \citep{BalajiSC18}.
+\emph{Meta-learning} approaches provide algorithms which tackle the problem of  \emph{learning  to learn} \citep{1998TP, SchmidhuberZW97}.
+ As such, \citet{FinnAL17} propose a Model-Agnostic Meta-Learning (MAML) algorithm which is able to quickly learn new tasks with fine-tuning. \citet{LiYSH18} adapt this algorithm for domain generalization (no fine-tuning) such that we can adapt to new domains by utilizing the meta-optimization objective which ensures that steps to improve training domain performance should also improve testing domain performance. Both approaches are not bound to a specific architecture and can therefore be deployed for a wide variety of learning tasks. These approaches recently got extended by two regularizers that encourage general knowledge about inter-class relationships and domain-independent class-specific cohesion \citep{DouCKG19}, to instances of domain generalization where the label space varies from domain to domain \citep{LiYZH19}, or meta-learning a regularizer which encourages across-domain performance \citep{BalajiSC18}.
 
 \subsection{Data Augmentation}
-\emph{Data Augmentation} remains a competitive method for generalizing to unseen domains \citep{zhang2019unseen}. However, to deploy an efficient procedure for that, human experts need to consider the data at hand to develop a useful routine \citep{gulrajani2020search}. Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a method to merge samples from different domains \citep{XuZNLWTZ20, yan2020improve, WangLK20, mancini2020}. Other works have also tried removing textural information from images \citep{WangHLX19} or shifting it more towards shapes \citep{nam2019reducing, asadi2019shape}. \citet{CarlucciDBCT19} used jigsaw puzzles of image patches as a classification task to show that this improves domain generalization while \citet{VolpiNSDMS18} demonstrate that adversarial data augmentation on a single domain is sufficient. Several methods also utilize GANs to augment the available training data  \citep{RahmanFBS19, ZhouYHX20, ShankarPCCJS18}. 
+\emph{Data Augmentation} remains a competitive method for generalizing to unseen domains \citep{zhang2019unseen}. Works in this segment try to extend the source domain to a wider range of domains by augmenting the available training domains \citep{huang2020selfchallenging}. However, to deploy an efficient procedure for that, human experts need to consider the data at hand to develop a useful routine \citep{gulrajani2020search}.
+
+Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a method to merge samples from different domains \citep{XuZNLWTZ20, yan2020improve, WangLK20, mancini2020}. Other works have also tried removing textural information from images \citep{WangHLX19} or shifting it more towards shapes \citep{nam2019reducing, asadi2019shape}. \citet{CarlucciDBCT19} used jigsaw puzzles of image patches as a classification task to show that this improves domain generalization while \citet{VolpiNSDMS18} demonstrate that adversarial data augmentation on a single domain is sufficient. Further, \citet{VolpiM19} use popular image transformations (\eg brightness, contrast, sharpness) with differing intensity levels to train a more robust model or \citet{somavarapu2020frustratingly} use other stylizing techniques. Several methods also utilize GANs to augment the available training data  \citep{RahmanFBS19, ZhouYHX20, ShankarPCCJS18} or use other methods to generate synthetic domains \citep{zhou2020learning}. \citet{QiaoZP20} deploy an adversarial domain augmentation approach using a Wasserstein Auto-Encoder.
+
+
 
 \section{Common Datasets}
+
+There exist several datasets which are commonly used in domain generalization research. Here, we want to introduce the most popular choices as well as interesting datasets to consider. We give an overview over \emph{Rotated MNIST}, \emph{Colored MNIST}, \emph{Office-Home}, \emph{VLCS}, \emph{PACS}, \emph{Terra Incognita}, \emph{DomainNet}, and \emph{ImageNet-C}. Currently, the most popular choices include ``PACS'', ``VLCS'', and ``Office-Home''.
 
 \subsection{Rotated MNIST}
 The rotated MNIST (RMNIST) dataset \citep{GhifaryKZB15} is a variation of the original MNIST dataset \citep{lecun-mnisthandwrittendigit-2010} where each digit got rotated by degrees $\{0, 15, 30, 45, 60, 75\}$. Each rotation angle represents one domain as shown in \Cref{tab:common_examples} for classes ``2'' and ``4''. The overall dataset in \citet{gulrajani2020search} includes \num{70000} images from $10$ homogeneous classes ($0-9$) each with dimension $1\times28\times28$.
 
 \begin{table}[htbp]
     \centering
-    \begin{tabularx}{\textwidth}{lcYYYYYY}
+    \begin{tabularx}{\textwidth}{lcYYYYYYYY}
     \toprule
-    \textbf{Dataset}  & \textbf{Reference} & $\mathcal{D}^1$   &  $\mathcal{D}^2$ & $\mathcal{D}^3$ & $\mathcal{D}^4$ & $\mathcal{D}^5$ & $\mathcal{D}^6$ \\
+    \textbf{Dataset}  & \textbf{Reference} & $\mathcal{D}^1$   &  $\mathcal{D}^2$ & $\mathcal{D}^3$ & $\mathcal{D}^4$ & $\mathcal{D}^5$ & $\mathcal{D}^6$ & $\dots$ & $\mathcal{D}^{75}$ \\
     \midrule
-       \multirow{7}{*}{\textbf{Rotated MNIST}}  & \multirow{7}{*}{\textbf{\citep{GhifaryKZB15}}} & $0^\circ$ & $15^\circ$ & $30^\circ$ & $45^\circ$ & $60^\circ$ & $75^\circ$ \\
+    \multirow{7}{*}{\textbf{ImageNet-C}}  & \multirow{7}{*}{\textbf{\citep{HendrycksD19}}} & \domainsize{Shot Noise} &     \domainsize{Impulse Noise} & \domainsize{Defocus Blur} & \domainsize{Snow} & \domainsize{Fog} & \domainsize{Brightness}  & &  \domainsize{Pixelate}   \\
+    & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/shot_noise_class1.JPEG} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/impulse_noise_class1.JPEG} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/defocus_blur_class1.JPEG} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/snow_class1.JPEG} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/fog_class1.JPEG} & 
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/brightness_class1.JPEG} & $\dots$ & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/pixelate_class1.JPEG} \\
+        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/shot_noise_class2.JPEG} &\includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/impulse_noise_class2.JPEG} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/defocus_blur_class2.JPEG} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/snow_class2.JPEG} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/fog_class2.JPEG} &
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/brightness_class2.JPEG} & $\dots$ & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/ImageNetC/pixelate_class2.JPEG} \\
+       \addlinespace
+        %%
+       \multirow{7}{*}{\textbf{Rotated MNIST}}  & \multirow{7}{*}{\textbf{\citep{GhifaryKZB15}}} & \domainsize{$0^\circ$} & \domainsize{$15^\circ$} & \domainsize{$30^\circ$} & \domainsize{$45^\circ$} & \domainsize{$60^\circ$} & \domainsize{$75^\circ$} && \\
        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env00_2_idx470_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env115_6_idx8084_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env230_23_idx3711_class2.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env345_9_idx11212_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env460_11_idx7785_class2.png} & 
-       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env575_27_idx3863_class2.png} \\
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env575_27_idx3863_class2.png} && \\
         & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env00_19_idx5269_class4.png} &\includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env115_8_idx7608_class4.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env230_18_idx2042_class4.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env345_7_idx6290_class4.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env460_6_idx1791_class4.png} &
-       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env575_14_idx11054_class4.png} \\
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/RMNIST/RotatedMNIST_env575_14_idx11054_class4.png} & & \\
        \addlinespace
        %%
-       \multirow{7}{*}{\textbf{DomainNet}} &  \multirow{7}{*}{\textbf{\citep{PengBXHSW19}}} & Clipart & Graphic & Painting & Draw & Photo & Sketch \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env0clipart_4_idx283_class2.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env1infograph_8_idx378_class2.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env2painting_41_idx507_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env3quickdraw_30_idx1326_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env4real_9_idx1117_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env5sketch_28_idx421_class2.png} \\
-       &  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env0clipart_1_idx1098_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env1infograph_39_idx689_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env2painting_25_idx2262_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env3quickdraw_7_idx4907_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env4real_34_idx3532_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env5sketch_0_idx1772_class9.png} \\
+       \multirow{7}{*}{\textbf{DomainNet}} &  \multirow{7}{*}{\textbf{\citep{PengBXHSW19}}} & \domainsize{Clipart} & \domainsize{Graphic} & \domainsize{Painting} & \domainsize{Draw} & \domainsize{Photo} & \domainsize{Sketch}  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env0clipart_4_idx283_class2.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env1infograph_8_idx378_class2.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env2painting_41_idx507_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env3quickdraw_30_idx1326_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env4real_9_idx1117_class2.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env5sketch_28_idx421_class2.png}  & & \\
+       &  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env0clipart_1_idx1098_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env1infograph_39_idx689_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env2painting_25_idx2262_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env3quickdraw_7_idx4907_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env4real_34_idx3532_class9.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/DomainNet/DomainNet_env5sketch_0_idx1772_class9.png}  & & \\
        \addlinespace
        %%
-       \multirow{7}{*}{\textbf{Office-Home}} & \multirow{7}{*}{\textbf{\citep{VenkateswaraECP17}}} & Art & Clipart & Product & Real & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env0Art_1_idx61_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env1Clipart_5_idx24_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env2Product_14_idx67_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env3Real World_44_idx13_class0.png} & & \\
-        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env0Art_18_idx176_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env1Clipart_12_idx199_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env2Product_19_idx261_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env3Real World_20_idx300_class3.png} & & \\
+       \multirow{7}{*}{\textbf{Office-Home}} & \multirow{7}{*}{\textbf{\citep{VenkateswaraECP17}}} & \domainsize{Art} & \domainsize{Clipart} & \domainsize{Product} & \domainsize{Real} & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env0Art_1_idx61_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env1Clipart_5_idx24_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env2Product_14_idx67_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env3Real World_44_idx13_class0.png} & &  & & \\
+        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env0Art_18_idx176_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env1Clipart_12_idx199_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env2Product_19_idx261_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/OfficeHome/OfficeHome_env3Real World_20_idx300_class3.png} & &  & & \\
         \addlinespace
         %%
-       \multirow{7}{*}{\textbf{VLCS}} & \multirow{7}{*}{\textbf{\citep{EveringhamGWWZ10, RussellTMF08, Griffin2007Caltech256OC, ChoiLTW10}}} & V & L & C & S & & \\ 
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/voc_bird.jpg}  &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/labelme_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/caltech_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/sun_bird.jpg} & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/voc_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/labelme_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/caltech_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/sun_car.jpg} & & \\
+       \multirow{7}{*}{\textbf{VLCS}} & \multirow{7}{*}{\textbf{\citep{FangXR13}}} & \domainsize{V} & \domainsize{L} & \domainsize{C} & \domainsize{S} & &  & & \\ 
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/voc_bird.jpg}  &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/labelme_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/caltech_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/sun_bird.jpg} & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/voc_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/labelme_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/caltech_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/VLCS/sun_car.jpg} & &  & & \\
        \addlinespace
        %%
-       \multirow{7}{*}{\textbf{Terra Incognita}} & \multirow{7}{*}{\textbf{\citep{BeeryHP18}}} & L100 & L38 & L43 & L46 & & \\ 
+       \multirow{7}{*}{\textbf{Terra Incognita}} & \multirow{7}{*}{\textbf{\citep{BeeryHP18}}} & \domainsize{L100} & \domainsize{L38} & \domainsize{L43} & \domainsize{L46} & &  & & \\ 
        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env0location_100_22_idx685_class4.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env1location_38_5_idx2429_class4.png} &
-       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env2location_43_45_idx2058_class4.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env3location_46_6_idx2012_class4.png} & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env0location_100_0_idx823_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env1location_38_35_idx2747_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env2location_43_38_idx2211_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env3location_46_37_idx2142_class5.png} & & \\
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env2location_43_45_idx2058_class4.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env3location_46_6_idx2012_class4.png} & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env0location_100_0_idx823_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env1location_38_35_idx2747_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env2location_43_38_idx2211_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/TerraIncognita/TerraIncognita_env3location_46_37_idx2142_class5.png} & &  & & \\
        \addlinespace
        %%
-       \multirow{7}{*}{\textbf{PACS}} & \multirow{7}{*}{\textbf{\citep{LiYSH17}}}  & Art & Cartoon & Photo & Sketch & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_1.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_2.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_3.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_4.png} & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_1.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_2.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_3.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_4.png} & & \\
+       \multirow{7}{*}{\textbf{PACS}} & \multirow{7}{*}{\textbf{\citep{LiYSH17}}}  & \domainsize{Art} & \domainsize{Cartoon} & \domainsize{Photo} & \domainsize{Sketch} & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_1.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_2.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_3.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/dog_4.png} & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_1.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_2.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_3.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/PACS/elephant_4.png} & &  & & \\
        \addlinespace
        %%
-       \multirow{7}{*}{\textbf{Colored MNIST}} & \multirow{7}{*}{\textbf{\citep{arjovsky2019invariant}}} & $\plus90\%$ & $\plus80\%$ & $\minus90\%$ & & & \\
-       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env00.1_18_idx12999_class0.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env10.2_11_idx22249_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env20.9_1_idx13997_class0.png} & & & \\
-        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env00.1_8_idx9692_class1.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env10.2_5_idx15365_class1.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env20.9_9_idx7793_class1.png}  & & & \\
+       \multirow{7}{*}{\textbf{Colored MNIST}} & \multirow{7}{*}{\textbf{\citep{arjovsky2019invariant}}} & \domainsize{$\plus90\%$} & \domainsize{$\plus80\%$} & \domainsize{$\minus90\%$} & & &  & & \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env00.1_18_idx12999_class0.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env10.2_11_idx22249_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env20.9_1_idx13997_class0.png} & & &  & & \\
+        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env00.1_8_idx9692_class1.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env10.2_5_idx15365_class1.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/Chapter2/CMNIST/ColoredMNIST_env20.9_9_idx7793_class1.png}  & & &  & & \\
         \addlinespace
     \bottomrule
     \end{tabularx}
@@ -253,78 +241,42 @@ The colored MNIST (CMNIST) dataset \citep{arjovsky2019invariant} is another vari
 
 To construct the dataset \citet{arjovsky2019invariant} first assign a initial label $\Tilde{y} = 0$ for digit $0-4$ and $\Tilde{y} = 1$ for digit $5-9$. This initial label is then flipped with a probability of $25\%$ to obtain the final label $y$. Finally, we obtain the color $z$ by flipping the label $y$ with probabilities $p^d \in \{0.1,0.2,0.9\}$ depending on the domain. The image is then colored red for $z=1$ or green for $z=0$ \citep{arjovsky2019invariant}. Samples for both classes across domains can be seen in \Cref{tab:common_examples}.
 
-Overall, the dataset in \citet{gulrajani2020search} contains \num{70000} images from $2$ homogeneous classes ($0$ \& $1$) of dimension $(2,28,28)$.  
+Overall, the dataset in \citet{gulrajani2020search} contains \num{70000} images from $2$ homogeneous classes ($0$ \& $1$) of dimension $2 \times 28 \times 28$.  
 
 
 \subsection{Office-Home}
-The Office-Home dataset \citep{VenkateswaraECP17}  provides \num{15588} images from $65$ categories across $4$ domains. The domains include Art, Clipart, Products (objects without a background), and Real-World (captured with a regular camera). Samples from these domains for the classes ``alarm clock'' and ``bed'' can be seen in \Cref{tab:common_examples}. On average, each class contains around $70$ images with a maximum of $99$ images in a category \citep{VenkateswaraECP17}.
+The Office-Home dataset \citep{VenkateswaraECP17}  provides \num{15588} images from $65$ categories across $4$ domains. The domains include \emph{Art}, \emph{Clipart}, \emph{Products} (objects without a background), and \emph{Real-World} (captured with a regular camera). Samples from these domains for the classes ``alarm-clock'' and ``bed'' can be seen in \Cref{tab:common_examples}. On average, each class contains around $70$ images with a maximum of $99$ images in a category \citep{VenkateswaraECP17}. In \citet{gulrajani2020search} they use dimension $3 \times 224 \times 224$ for each image. 
 
 
 \subsection{VLCS}
 
-(V) \citet{EveringhamGWWZ10} (L) \citet{RussellTMF08} (C) \citet{Griffin2007Caltech256OC} (S) \citet{ChoiLTW10}
+The VLCS dataset \citep{FangXR13} is a dataset which utilizes photographic datasets as individual domains. As such, it containts the domains \emph{PASCAL VOC} (V) \citep{EveringhamGWWZ10}, \emph{LabelMe} (L) \citep{RussellTMF08}, \emph{Caltech101} (C) \citep{Fei-FeiFP07} and \emph{SUN09} (S) \citep{ChoiLTW10}. In total, there are \num{10729} images from $5$ classes. Samples for the classes ``bird'' and ``car'' can be seen in \Cref{tab:common_examples}. In \citet{gulrajani2020search} they use the dimension $3 \times 224 \times 224$ for each image. 
 
 \subsection{PACS}
-The PACS dataset \citep{LiYSH17} consists of images from different domains including photo (P), Art (A), cartoon (C) and sketch (S) as individual domains. As such, it extends the previously photo-dominated data sets in domain generalization \citep{LiYSH17}. It includes $7$ homogeneous classes (dog, elephant, giraffe, guitar, horse, house, person) across the $4$ previously mentioned domains. \Cref{tab:common_examples} shows samples from the ``dog'' and ``elephant'' class across all domains. 
+The PACS dataset \citep{LiYSH17} consists of images from different domains including \emph{photo} (P), \emph{Art} (A), \emph{cartoon} (C) and \emph{sketch} (S) as individual domains. As such, it extends the previously photo-dominated data sets in domain generalization \citep{LiYSH17}. It includes $7$ homogeneous classes (dog, elephant, giraffe, guitar, horse, house, person) across the $4$ previously mentioned domains. \Cref{tab:common_examples} shows samples from the ``dog'' and ``elephant'' class across all domains. 
 
-In total, PACS contains \num{9991} images which got obtained by intersecting classes from Caltech256 (Photo), Sketchy (Photo, Sketch) \citep{SangkloyBHH16}, TU-Berlin (Sketch) \citep{EitzHA12} and Google Images (Art, Cartoon, Photo) \citep{LiYSH17}
+In total, PACS contains \num{9991} images which got obtained by intersecting classes from Caltech256 (Photo), Sketchy (Photo, Sketch) \citep{SangkloyBHH16}, TU-Berlin (Sketch) \citep{EitzHA12} and Google Images (Art, Cartoon, Photo) \citep{LiYSH17}.
 
-
-\subsection{ImageNet-Sketch}
-\citet{WangGLX19}
-
-\begin{table}[htbp]
-    \centering
-    \begin{tabularx}{\textwidth}{cYYYY}
-    \toprule
-    \textbf{Class}     &  \textbf{$\mathcal{D}^1$ -- Art} & \textbf{$\mathcal{D}^2$ -- Cartoon} & \textbf{$\mathcal{D}^3$ -- Photo} & \textbf{$\mathcal{D}^4$ -- Sketch} \\
-    \midrule
-       Dog  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-       Elephant  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-    \bottomrule
-    \end{tabularx}
-    \caption{Samples for classes ``Dog'' and ``Elephant'' across domains in the ImageNet-Sketch dataset}
-    \label{tab:imagenet_sketch_examples}
-\end{table}
-
-
-\subsection{ImageNet-C}
-\citet{HendrycksD19}
-
-\begin{table}[htbp]
-    \centering
-    \begin{tabularx}{\textwidth}{cYYYY}
-    \toprule
-    \textbf{Class}     &  \textbf{$\mathcal{D}^1$ -- Art} & \textbf{$\mathcal{D}^2$ -- Cartoon} & \textbf{$\mathcal{D}^3$ -- Photo} & \textbf{$\mathcal{D}^4$ -- Sketch} \\
-    \midrule
-       Dog  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-       Elephant  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-    \bottomrule
-    \end{tabularx}
-    \caption{Samples for classes ``Dog'' and ``Elephant'' across domains in the ImageNet-C dataset}
-    \label{tab:imagenet_c_examples}
-\end{table}
-
-\subsection{ImageNet-R}
-\begin{table}[htbp]
-    \centering
-    \begin{tabularx}{\textwidth}{cYYYY}
-    \toprule
-    \textbf{Class}     &  \textbf{$\mathcal{D}^1$ -- Art} & \textbf{$\mathcal{D}^2$ -- Cartoon} & \textbf{$\mathcal{D}^3$ -- Photo} & \textbf{$\mathcal{D}^4$ -- Sketch} \\
-    \midrule
-       Dog  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-       Elephant  & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{Figures/img-placeholder.png} \\ 
-    \bottomrule
-    \end{tabularx}
-    \caption{Samples for classes ``Dog'' and ``Elephant'' across domains in the ImageNet-R dataset}
-    \label{tab:imagenet_r_examples}
-\end{table}
-
-\citet{hendrycks2020faces}
 
 \subsection{Terra Incognita}
+The Terra Incognita dataset is a subset of the initial caltech camera traps dataset proposed by \citet{BeeryHP18}. It contains photographs of wild animals taken by camera traps at different locations (IDs: $38$, $43$, $46$, $100$) which represent the domains. As such, the version used by \citet{gulrajani2020search} contains \num{24788} images of $10$ classes, each with size $3\times 224 \times 224$. Samples from two different classes can be seen in \Cref{tab:common_examples}. The chosen locations represent the Top-4 locations with the largest number of images, each with more than \num{4000} images. 
+
+The main data challenges which arise in this dataset include illumination, motion blur, size of the region of interest, occlusion, camouflage, and perspective \citep{BeeryHP18}. This includes animals not always being salient or them being small or far from the camera which results in only partial views of the animals' body being available \citep{BeeryHP18}. 
 
 \subsection{DomainNet}
+
+The DomainNet dataset \citep{PengBXHSW19} contains six domains: \emph{clipart} (\num{48129} images), \emph{infographic} (\num{51605} images), \emph{painting} (\num{72266} images), \emph{quickdraw} (\num{172500} images), \emph{real} (\num{172947} images), and \emph{sketch} (\num{69128} images) for $345$ classes. In total, it contains \num{586575} images  which got accumulated by searching a category with a domain name in multiple image search engines and, as an exception, players of the game ``Quick Draw!'' for the quickdraw domain \citep{PengBXHSW19}.
+
+To secure the quality of the dataset, they hired $20$ annotators for a total of \num{2500} hours to filter out falsely labeled images \citep{PengBXHSW19}. Each category has an average of $150$ images for the domains \emph{clipart} and \emph{infographic}, $220$ images for \emph{painting} and \emph{sketch}, and $510$ for \emph{real} \citep{PengBXHSW19}.
+
+\subsection{ImageNet-C}
+The ImageNet-C dataset \citep{HendrycksD19} contains images out of ImageNet \citep{RussakovskyDSKS15} permutated according to $15$ corruption types each with $5$ levels of severity which results in $75$ domains. The type of corruptions are out of the categories ``noise'', ``blur'', ``weather'', and ``digital'' \citep{HendrycksD19}. \Cref{tab:common_examples} shows a few of the available corruptions at severity $3$ for the same image sample of two different classes. As their corruptions, they provide \emph{Gaussian Noise}, \emph{Shot Noise}, \emph{Impulse Noise}, \emph{Defocus Blur}, \emph{Frosted Glass Blur}, \emph{Motion Blur}, \emph{Zoom Blur}, \emph{Snow}, \emph{Frost}, \emph{Fog}, \emph{Brightness}, \emph{Contrast}, \emph{Elastic}, \emph{Pixelate}, and \emph{JPEG} \citep{HendrycksD19}. 
+
+Overall, the dataset provides all \num{1000} ImageNet classes where each image has the standard dimension of $3 \times 224 \times 224$.
+
+
+%\subsection{ImageNet-R}
+%\citet{hendrycks2020faces}
 
 
 
