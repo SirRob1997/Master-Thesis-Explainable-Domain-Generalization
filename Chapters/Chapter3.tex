@@ -1,10 +1,48 @@
 \chapter{Explainability in Deep Learning} 
-\label{Explainability} 
+\label{sec:Explainability} 
 
-Summary: \citep{xie2020explainable}
+Machine Learning systems and especially Deep Neural Networks have the property that they are often seen as ``black-boxes'' \ie they are hard to interpret and pinpointing as a user how and why they recommend a certain course of action is often very difficult, if not impossible. This property becomes a prominent impediment for intelligent systems deployed in impactful sectors like, for example, employment \citep{QinZXZJCX18, CaiSJLQXZ20, ZhaoHCFZ18}, jurisdiction \citep{GuoHQX019}, healthcare \citep{Pasa2019}, or banking loans where users would like to know the deciding factors for decisions. As such, we would like systems that are easily interpretable, relatable to the user, provides contextual information about the choice, and reflects the intermediate thinking of the user for a decision \citep{xie2020explainable}. Since these properties are very broad, it is not surprising that researchers in this field have very different approaches \citep{xie2020explainable}. For this chapter, we utilized the field guide by \citet{xie2020explainable} to paint an appropriate overview and properly explain the different approaches. Commonly, methods try to provide better solutions regarding the traits \emph{Confidence}, \emph{Trust}, \emph{Safety}, and \emph{Ethics} to improve the overall explainability of the system \citep{xie2020explainable}:
 
-White-Box: \citep{BargalZKZMS18} \citep{SelvarajuCDVPB20} \citep{SimonyanVZ13} \citep{SpringenbergDBR14} \citep{ZeilerF14} \citep{ZhangBLBSS18} \citep{ZhouKLOT16} \citep{ChenLTBRS19} 
-\citep{CaoLYYWWHWHXRH15} \citep{SelvarajuLSJGHB19}
+\paragraph{Confidence}
+This trait is increasing when the ``reasoning'' behind a decision between the DNN and the user matches. Hence, for example, saliency attention maps \citep{ParkHARSDR18, HudsonM18} ensure that semantically loaded parts of an image get considered and therefore increase confidence.
+
+\paragraph{Trust} 
+Trust is established when the decision of the intelligent system doesn't need to be validated. Recently, many works have studied the problem whether a model can safely be adopted \citep{GharibLBADB18, VarshneyA17, JiangKGG18}. To be able to trust a model, we need to ensure \emph{satusfactory testing} of the model as well as \emph{experience} with the model to ensure that the results commonly match the expectation as data drifts \citep{xie2020explainable}.
+
+\paragraph{Safety}
+Safety needs to be high for intelligent systems that impact human life in any form. As such, the model should perform \emph{consistently} as expected, \emph{prevent} choices that have a negative impact on the user or society, have a high \emph{reliability} under all operating conditions, and provide \emph{feedback} on how the operating conditions influence the behavior \citep{xie2020explainable}.
+
+\paragraph{Ethics}
+This trait is defined differently depending on the moral principles of each user. In general, though, one can create an ``ethics code'' which a system's decisions are based off \citep{xie2020explainable}. One example is that try to prevent racial biases or reduce the effect of any features that serves as a proxy for this type of discrimination process. Similarly, any protected characteristic \eg  religion, gender, disability, or sexual orientation are features which should be handled with great care.
+
+
+\section{Related topics}
+There exist several concepts which are related to explainable deep learning. Here, we cover \emph{model debugging} which tries to identify aspects which hinder training inference, \emph{fairness and bias} which especially tackles the ethics trait, and \emph{adversarial attack and defense} which search for differences in regular and irregular activation patterns to promote robust and trustworthy systems \citep{xie2020explainable}. 
+
+\subsection{Model Debugging}
+\emph{Model debugging}, similar to traditional software debugging, tries to pinpoint aspects of the architecture, data-processing, or training process which cause errors \citep{xie2020explainable}. 
+
+\citet{amershi2015modeltracker} propose \textsc{ModelTracker} which is a debugging framework and interactive visualization that displays traditional statistics like Area Under the Curve (AUC) or confusion matrices. It also shows how close samples are in the feature space and allows users to expand the visualization to show the raw data or annotate them. \citet{AlainB17} deploy linear classifiers to predict the information content in intermediate layers where the features of every layer serve as input to the separate classifier. They show that using features from deeper layers improves prediction accuracy and  that level of linear separability increases monotonically. \citet{fuchs2018scrutinizing} introduce \emph{neural stethoscopes} as a framework for analyzing factors of influence and interactively promoting and suppressing information. They extend the ordinary DNN architecture via a parallel two layer perceptron at different locations where the input are the features from any layer from the main architecture. This stethoscope is then trained on a supplemental task and the loss is backpropagated to the main model with weighting factor $\lambda$ \citep{fuchs2018scrutinizing}. This factor controls if the stethoscope functions analytical ($\lambda = 0$), auxiliary ($\lambda > 0$), or adversarial ($\lambda < 0$) \citep{fuchs2018scrutinizing}. Further, \citet{KangRBZ20} use \emph{model assertions} which are functions for a model's input and output that indicate when errors may be occurring. They show that with these they are able to solve problems where car detection in successive frames disappears and reappears \citep{KangRBZ20}. Model debugging is therefore implemented through a verification system \citep{xie2020explainable}. 
+
+%\subsection{Adversarial Attack and Defense}
+
+\subsection{Fairness and Bias}
+To secure \emph{model fairness}, there exist several definitions which have emerged in the literature in recent years. \emph{Group fairness} \citep{CaldersKP09}, also known as  demographic parity or statistical party, aims at equalizing benefits across groups with respect to protected characteristics (\eg religion, gender, etc.). By definition, if group $A$ has twice as many people as group $B$, twice as many people in group $A$ should receive the benefit when compared to $B$ \citep{xie2020explainable}. On the other hand, \emph{individual fairness} \citep{DworkHPRZ12} tries to secure that similar inputs get treated similarly. There also exist other notions of fairness such as \emph{equal opportunity} \citep{HardtPNS16}, \emph{disparate mistreatment} \citep{ZafarVGG17}, or other variations \citep{HeidariFGK18, WoodworthGOS17}.
+
+Methods which try to tackle fairness can be classified into three approaches called \emph{pre-processing}, \emph{in-processing}, \emph{post-processing}:
+\begin{enumerate}
+    \item \textbf{Pre-processing} methods adapt the input data beforehand to remove features correlated to protected characteristics. As such, they try to learn an alternative feature representation without these attributes \citep{GordalizaBGL19, CalmonWVRV17, LouizosSLWZ15, ZemelWSPD13}. 
+    \item \textbf{In-processing} approaches add adjustments for fairness in the model learning process. This way, they punish decisions which are not aligned with certain fairness constraints \citep{DworkIKL18, DoniniOBSP18, AgarwalBD0W18}.
+    %\citep{DworkIKL18, DoniniOBSP18, MenonW18, AgarwalBD0W18}
+    \item \textbf{Post-processing} methods adjust the model predictions afterwards to account for fairness. It is the reassignment of class labels after classification with the goal of minimizing 
+    classification errors subject to a particular fairness constraint \citep{HardtPNS16,PleissRWKW17, FeldmanFMSV15}.
+\end{enumerate}
+
+
+\section{Previous Works}
+
+\citep{BargalZKZMS18} \citep{SelvarajuCDVPB20} \citep{SimonyanVZ13} \citep{SpringenbergDBR14} \citep{ZeilerF14} \citep{ZhangBLBSS18} \citep{ZhouKLOT16} \citep{ChenLTBRS19} 
+\citep{CaoLYYWWHWHXRH15} \citep{SelvarajuLSJGHB19} \citep{RossHD17}
 
 Spatial semantic segmentation: \citep{LiWPE018} \citep{ZhouZYQJ18} \citep{WeiFLCZY17}
 
@@ -12,9 +50,18 @@ Object localization: \citep{ZhangWF0H18}
 
  Prototypes: \citep{LiLCR18}
 
+\subsection{Visualization}
+\paragraph{Back-Propagation}
+\paragraph{Perturbation}
 
+\subsection{Model distillation}
+\paragraph{Local approximations}
+\paragraph{Model Translation}
 
+\subsection{Intrinsic methods}
+\paragraph{Attention Mechanisms}
+\paragraph{Joint Training}
 
-\section{Explainable Domain Generalization}
+\section{Explainability for Domain Generalization}
 
 \citep{zunino2020explainable}
