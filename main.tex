@@ -32,10 +32,12 @@ headsepline, % Uncomment to get a line under the header
 % \usepackage[labelformat=simple]{subcaption} % Add multiple subfigures in a figure environment
 % \captionsetup{justification=justified, margin=0pt}
 % \renewcommand\thesubfigure{(\Alph{subfigure})} % change the image numbering and reference link to (A),(B),(C), ...... format
-
-\usepackage{mathpazo} % Use the Palatino font by default
+\usepackage{mathrsfs}  
+\usepackage[sc]{mathpazo} % or option osf
+%\usepackage{newpxmath}
+%\usepackage{mathpazo} % 
 % \usepackage[backend=bibtex,style=alphabetic,natbib=true]{biblatex} % Use the bibtex backend with the authoryear citation style (which resembles APA)
-\usepackage[sortcites,doi=false,isbn=true,url=false, natbib=true,maxbibnames=99,giveninits=true, backend=biber]{biblatex}
+\usepackage[sortcites,doi=false,isbn=true,url=false, style=numeric-comp, natbib=true,maxbibnames=99,giveninits=true, backend=biber]{biblatex}
 \usepackage[autostyle=true]{csquotes} 
 \AtBeginEnvironment{enquote}{\itshape} % change the quote words to italics style
 \usepackage{rotating} % Required to add rotated big tables

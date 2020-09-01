@@ -1,3 +1,5 @@
+\newcommand{\lime}{\textsc{LIME}}
+
 \chapter{Explainability in Deep Learning} 
 \label{sec:Explainability} 
 
@@ -41,14 +43,12 @@ Methods which try to tackle fairness can be classified into three approaches cal
 
 \section{Previous Works}
 
-\citep{BargalZKZMS18} \citep{SelvarajuCDVPB20} \citep{SimonyanVZ13} \citep{ZhangBLBSS18} \citep{ChenLTBRS19} 
-\citep{CaoLYYWWHWHXRH15} \citep{SelvarajuLSJGHB19} \citep{RossHD17}
+%\citep{BargalZKZMS18} \citep{ZhangBLBSS18}
+%\citep{CaoLYYWWHWHXRH15} \citep{SelvarajuLSJGHB19} \citep{RossHD17}
 
-Spatial semantic segmentation: \citep{LiWPE018} \citep{ZhouZYQJ18} \citep{WeiFLCZY17}
+%Spatial semantic segmentation: \citep{LiWPE018} \citep{ZhouZYQJ18} \citep{WeiFLCZY17}
 
-Object localization: \citep{ZhangWF0H18}
-
- Prototypes: \citep{LiLCR18}
+%Object localization: \citep{ZhangWF0H18}
  
  Generally, we can divide methods for explainable deep neural networks in \emph{visualization}, \emph{model distillation}, and \emph{intrinsic} methods \citep{xie2020explainable}. While \emph{visualization} methods try to highlight features which strongly correlate with the output of the DNN, \emph{model distillation} builds upon a jointly trained ``white-box'' model, following the input-output behavior of the original architecture and aiming to identify its decision rules \citep{xie2020explainable}. Finally, \emph{intrinsic} methods are networks designed to explain their output, hence they aim to optimize both, its performance and the respective explanations \citep{xie2020explainable}.
 
@@ -89,18 +89,74 @@ Apart from CAMs, there also exist other methods like layer-wise relevance propag
 \subsubsection{Perturbation}
 Methods that build upon perturbation alternate the input features to compute their respective relevance for the model's output by comparing the differences between the original and permutation.
 
-\citet{ZeilerF14} sweep a gray patch over the image to determine how the model will react to occluded areas. Once, an area with high correlation to the output is covered, the prediction performance drops \citep{xie2020explainable, ZeilerF14}. \citet{li2016understanding} deploy a similar idea for NLP tasks where they erase words and measure the influence on the model's performance. \citet{FongV17}
-
+\citet{ZeilerF14} sweep a gray patch over the image to determine how the model will react to occluded areas. Once, an area with high correlation to the output is covered, the prediction performance drops \citep{xie2020explainable, ZeilerF14}. \citet{li2016understanding} deploy a similar idea for NLP tasks where they erase words and measure the influence on the model's performance. \citet{FongV17} define three perturbations I) replacing patches with a \emph{constant} value, II) adding \emph{noise} to a region, and  III) \emph{blurring} the area \citep{FongV17, xie2020explainable}. \citet{ZintgrafCAW17} propose a method based off \citet{Robnik-SikonjaK08} where they calculate the relevance of feature $x_i$ with respect to class $c$ through the prediction difference between  $p(c \mid \boldsymbol{x})$ and $p(c \mid \boldsymbol{x}_{-i})$ where $\boldsymbol{x}_{-i}$ denotes all input features except $x_i$ \citep{ZintgrafCAW17}. For that, they simulate the absence of the feature with \Cref{eq:predict_difference}.
+\begin{equation}
+\label{eq:predict_difference}
+    p(c \mid \boldsymbol{x}_{-i}) = \sum_{x_i} p(x_i \mid \boldsymbol{x}_{-i})p(c \mid \boldsymbol{x}_{-i}, x_i)
+\end{equation}
+After that, we can compute the difference (weight of evidence) according to \Cref{eq:change} where $\texttt{odds}(c \mid \boldsymbol{x}) = \frac{p(c \mid \boldsymbol{x})}{1 - p(c \mid \boldsymbol{x})}$. They also use Laplace correction to avoid division by zero \citep{ZintgrafCAW17}.
+\begin{equation}
+\label{eq:change}
+  \textrm{Diff}_i(c \mid \boldsymbol{x}) = \log_2(\texttt{odds}(c\mid \boldsymbol{x})) - \log_2(\texttt{odds}(c \mid \boldsymbol{x}_{-i}))  
+\end{equation}
+A positive value for this difference means the feature $x_i$ influences the model's decision for class $c$ and a negative value means against class $c$ \citep{ZintgrafCAW17}. \citet{ZintgrafCAW17} extend the initial method by \citet{Robnik-SikonjaK08} via sampling patches instead of pixels, removing patches instead of pixels, and adapting the method for intermediate layers \citep{xie2020explainable}.
 
 
 \subsection{Model distillation}
+Model distillation methods do post-training explanations where we learn a distilled model which imitates the original model's decisions on the same data \citep{xie2020explainable}. It has access to information from the initial model and can therefore give insights about the features and output correlations \citep{xie2020explainable}. Generally, we can divide these methods into \emph{local approximation} and \emph{model translation} approaches. These either use a small subset of the input data based on the idea that the model a network uses to discriminate in a local area of the data manifold is simpler (local approximation) or stick to using the entire dataset but with a smaller model (model translation) \citep{xie2020explainable}. 
+
+
 \subsubsection{Local approximations}
+
+Even though it may seem unintuitive to pursue approaches which don't explain every decision made by the DNN, practitioners often want to interpret decisions made for a specific data subset \eg employee performance indicators for those fired with poor performance \citep{xie2020explainable}. 
+
+One of the most popular local approximations is the method proposed by \citet{Ribeiro0G16} called local interpretable model-agnostic explanations (\lime). They propose a notation where from an unexplainable global model $f$ and an original representation of an instance $\mathbf{x}_i \in \mathbb{R}^d$ we want a interpretable model $g$ from the class of potentially interpretable models $g \in G$. The domain of $g$ is $\{0,1\}^{d^{\prime}}$ \ie absence/presence of interpretable components such as pixels or words. Since not all models $g$ have the same degree of interpretability, they define a complexity measure $\Omega(g)$ which could be the depth of the tree for decision trees or the number of non-zero weights in linear models \citep{Ribeiro0G16}. Further, they introduce a similarity kernel $\pi_{\mathbf{x}_i}(\mathbf{z}_j)$ between data points $\mathbf{x}_i$,  $\mathbf{z}_j$ and a loss $\mathcal{L}(f,g,\pi_{\mathbf{x}_i})$ for how good $g$ approximates $f$ on the data in the area $\pi_{\mathbf{x}_i}$ \citep{xie2020explainable}. The explanations $\xi(x)$ produced by \lime{} follow the objective shown in \Cref{eq:lime_min}.
+\begin{equation}
+\label{eq:lime_min}
+    \xi(x)=\underset{g \in G}{\arg\min}\ \mathcal{L}\left(f, g, \pi_{\mathbf{x}_i}\right)+\Omega(g)
+\end{equation}
+The complexity measure $\Omega(g)$ serves as a regularizer here. Since they are aiming at making \lime{} model-agnostic, they don't want to make any assumptions about $f$ when minimizing $\mathcal{L}\left(f, g, \pi_{\mathbf{x}_i}\right)$. Hence, they approximate the loss by drawing samples, weighted by $\pi_{\mathbf{x}_i}$ \citep{Ribeiro0G16}. There also exist many other works which build upon \lime{} to solve certain drawbacks  \citep{ElenbergDFK17, Ribeiro0G18}.
+
 \subsubsection{Model Translation}
+The idea of \emph{model translation} is to mimic the behavior of the original DNN on the whole dataset, contrary to local approximations which only use a smaller subset. Some works have tried to distill DNNs into Decision Trees \citep{FrosstH17, tan2018learning, ZhangYMW19}, finite state automata \citep{HouZ20}, Graphs \citep{ZhangCWZ17, ZhangCSWZ18, ZhangYMW19}, or Causal and Rule-based models \citep{harradon2018causal, MurdochS17}. Generally, the distilled models could be easier to deploy, faster to converge, or simply be more explainable \citep{xie2020explainable}.
 
 \subsection{Intrinsic methods}
-\subsubsection{Attention Mechanisms}
+Finally, \emph{intrinsic} methods jointly output an explanation in combination with their prediction. In an ideal world, such methods would be on par with state-of-the-art models without explainability. The two main approaches in this sector include the \emph{attention mechanism} and \emph{joint training}.
+
+\subsubsection{Attention mechanism}
+The \emph{attention mechanism} \citep{VaswaniSPUJGKP17} takes motivation from the human visual focus and peripheral
+perception \citep{schmidt2019recurrent}. With that, humans can focus on certain regions to achieve high resolution while adjacent objects are perceived with a rather low resolution \citep{schmidt2019recurrent}. In the attention mechanism, we learn a conditional distribution over given inputs using a weighted contextual vector based off alignment scores (attention weights) \citep{xie2020explainable}. These allow for insights on how strongly different input features are considered during model inference \citep{xie2020explainable}. The alignment scores can be computed either content-based \citep{graves2014neural}, additive \citep{BahdanauCB14}, based on the matrix dot-product \citep{LuongPM15}, or as a scaled version of the matrix dot-product \citep{VaswaniSPUJGKP17}. Especially due to the transformer architecture \citep{VaswaniSPUJGKP17}, attention has shown to improve DNN performance originally in natural language processing \citep{DevlinCLT19, brown2020language, lan2019albert}, but also more recently in image classification and other computer vision tasks \citep{AnwarB19, ZamirAKHK0020}. It has also been shown that attention is the update rule of a modern Hopfield network with continuous states \citep{ramsauer2020hopfield}, an architecture which hasn't been used very much in modern neural network models. Interestingly, recently there has been a discussion without clear outcome on whether or not attention counts as an explanation tool and to which degree the process actually offers insights into the inner workings of a DNN \citep{JainW19, WiegreffeP19}.
+
+
 \subsubsection{Joint Training}
+\emph{Joint training} introduces an additional task which gets jointly trained with the original task of the model \citep{xie2020explainable}. This additional task usually tries to provide either \emph{text explanations} \citep{HindWCCDMRV19, CamburuRLB18, HendricksARDSD16, ZellersBFC19}, an \emph{explanation association} \citep{DongSZZ17, LeiBJ16, IyerLL0SS18, Alvarez-MelisJ18}, or a \emph{model prototype} \citep{LiLCR18, ChenLTBRS19}. These differ in the provided explainability type as well as the degree of insight. 
+
+Text explanations are natural language outputs which explain the model decisions \citep{xie2020explainable}. As such, they are quite easy to understand regardless of the users background. Drawbacks of this approach are that they I) require supervision for explanations during training and II) explanations have been shown to be inconsistent which questions the validity of these explanations \citep{CamburuSMLB20}. 
+
+Explanation association combines latent features or input elements with human-understandable concepts. Such explanations either combine input or latent features with semantic concepts, associate the model prediction with a set of input elements, or utilize object saliency maps \citep{xie2020explainable}.
+
+Finally, model prototype approaches are specifically designed for classification tasks \citep{Bien2011, KimRS14, PriebeMDS03, wu2017prototypal}. The term \emph{prototype} in few- and zero-shot learning settings are points in the feature space representing a single class \citep{LiLCR18}. In such methods, the distance to the prototype determines how an observation is classified. The prototypes are not limited to a single observation but can also be obtained using a combination of observations or latent representations \citep{xie2020explainable}. A \emph{criticism} on the other hand, is a data instance that is not well represented by the set of prototypes \citep{molnar2019}. To obtain explainability using prototypes, one can trace the reasoning path for the prediction back to the learned prototypes \citep{xie2020explainable}. \citet{LiLCR18} use a prototype layer to deploy an explainable image classifier. They propose an architecture with an autoencoder and a prototype classifier. This prototype classifier calculates the $L^2$ distance between the encoded input and each of the prototypes, passes this through a fully connected layer to compute the sums of these distances, and finally normalizes them through a softmax layer \citep{LiLCR18}. Since these prototypes live in the same space as the encoded inputs, they can be visualized with the decoder \citep{LiLCR18}. This property, coupled with the fully connected weights, allows for explainability through visualization of the prototypes and their respective influence on the prediction. \Cref{fig:prototypes} shows the visualizations for the prototypes obtained by \citet{LiLCR18} on the MNIST \citep{lecun-mnisthandwrittendigit-2010} and Car \citep{FidlerDU12} dataset.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.49\textwidth, height=2cm]{Figures/Chapter3/prototype_result-1499.png}
+    \includegraphics[width=0.4\textwidth, height=2cm]{Figures/Chapter3/car_both_R1_and_R2_new.png}
+    \caption[Prototypes for the MNIST and Car dataset]{Prototypes for the MNIST (left) and Car (right) dataset: \citep{LiLCR18}}
+    \label{fig:prototypes}
+\end{figure}
+
+\citet{ChenLTBRS19} introduce a prototypical part network which has similar components to \citet{LiLCR18}, namely a convolutional neural network projecting onto a latent space and a prototype classifier. The approach chosen by \citet{ChenLTBRS19} is different as the prototypes are more fine-grained and represent parts of the input image \citep{xie2020explainable}. Hence, their model associates image patches with prototypes for explanations \citep{xie2020explainable}. \Cref{fig:looke_like} illustrates this approach for bird species classification.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.95\textwidth]{Figures/Chapter3/introbird-1.png}
+    \caption[Image of a clay colored sparrow and its decomposition into prototypes]{Image of a clay colored sparrow and its decomposition into prototypes: \citep{ChenLTBRS19}}
+    \label{fig:looke_like}
+\end{figure}
+
+While \citet{LiLCR18} need a decoder for visualizing the prototypes, \citet{ChenLTBRS19} doesn't require that since every prototype is the latent representation of some training image patch \citep{ChenLTBRS19}. They also show that when combining several of their networks into a larger network, their method is on par with best-performing deep models \citep{ChenLTBRS19}.
+
 
 \section{Explainability for Domain Generalization}
 
-\citep{zunino2020explainable}
+There exists one recent work by \citet{zunino2020explainable} which tries to combine both domain generalization and explainability. 
