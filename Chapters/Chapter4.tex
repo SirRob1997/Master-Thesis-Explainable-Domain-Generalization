@@ -1,10 +1,107 @@
-\chapter{Proposed Model}
+\newcommand{\rsc}{\textsc{RSC}\xspace}
+\newcommand{\scam}{\textsc{SCAM}\xspace}
+\newcommand{\scamb}{\textsc{SCAM-B}\xspace}
+\newcommand{\scambs}{\textsc{SCAM-BS}\xspace}
+\newcommand{\scamdb}{\textsc{SCAM-DB}\xspace}
+\newcommand{\scamdbs}{\textsc{SCAM-DBS}\xspace}
+\newcommand{\scamc}{\textsc{SCAM-C}\xspace}
+\newcommand{\scamcs}{\textsc{SCAM-CS}\xspace}
+\newcommand{\scamdc}{\textsc{SCAM-DC}\xspace}
+\newcommand{\scamdcs}{\textsc{SCAM-DCS}\xspace}
+\newcommand{\scamt}{\textsc{SCAM-T}\xspace}
+\newcommand{\scamts}{\textsc{SCAM-TS}\xspace}
+\newcommand{\scamdt}{\textsc{SCAM-DT}\xspace}
+\newcommand{\scamdts}{\textsc{SCAM-DTS}\xspace}
+
+\chapter{Proposed Method}
+
+\section{Self-Challenging Class Activation Maps}
+In \Cref{sec:RSC} we introduce the concept of Representation Self-Challenging for domain generalization while in \Cref{sec:CAMs} class activation maps, and specifically Grad-CAM gets introduced. It is quite easy to see that the importance scores $\alpha_{k,c}$ in Grad-Cam from \Cref{eq:grad_cam_importance} are a generalization of the spatial mean $\featurega$ used in Channel-Wise RSC from \Cref{eq:ChannelRSCavg}. The spatial mean $\featurega$ only computes the gradient with respect to the features for the most probable class while the importance scores $\alpha_{k,c}$ are formulated theoretically for all possible classes but similarly compute the gradient with respect to the feature representation. Both perform spatial average pooling.  
+
+As an intuitive baseline, we propose Self-Challenging Class Activation Maps (\scam), combining the two approaches as shown in \Cref{alg:ActivationMasking}. For that, we extract the features, compute the gradients with respect to the features as in \Cref{eq:gz}, and perform spatial average pooling to yield $\featurega$ according to \Cref{eq:ChannelRSCavg}. Our method deviates from Channel-Wise RSC by next computing class activation maps $\mathbf{M} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ according to \Cref{eq:Map}.
+\begin{equation}
+    \mathbf{M} = \mathtt{max}(0,\sum_{k=1}^K\featurega^k \mathbf{z}^k)
+    \label{eq:Map}
+\end{equation}
+Based on these maps and similar to \Cref{eq:Masking}, we compute a mask $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ for the Top-$p$ percentile of map activations as \Cref{eq:MaskMap}. 
+\begin{equation}
+\mathbf{m}_{i,j}=\left\{\begin{array}{ll}
+0, & \text { if } \quad \mathbf{M}_{i,j} \geq q_{p} \\
+1, & \text { otherwise }
+\end{array}\right.
+\label{eq:MaskMap}
+\end{equation}
+As class activation maps and the corresponding masks are averaged along the channel dimension, we duplicate the mask along all channels to yield a mask with the same size of the features $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$ which can directly be multiplied with the features to mask them. For the masked features, we compute the Cross-Entropy Loss from \Cref{eq:cross_entropy} and backpropagate to the whole network to update the parameters.
+
+\begin{algorithm}[t]
+    \SetAlgoLined
+    \SetNoFillComment
+    \SetKwInOut{Input}{Input}
+    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $p$, epochs $T$}
+    %\KwResult{how to write algorithm with \LaTeX2e }
+    %initialization\;
+    \BlankLine
+    \While{$epoch \leq T$}{
+    \For{every sample (or batch) $\mathbf{x}, \mathbf{y}$}{
+    Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
+    Compute gradient $\featureg$ w.r.t features according to \Cref{eq:gz} \;
+    Spatial avg. pooling to obtain $\featurega$ according to \Cref{eq:ChannelRSCavg} \tcp*[r]{$\featurega$ has shape $\mathbb{R}^{1 \times 1 \times K}$}
+    Compute class activation maps $\mathbf{M}$ with \Cref{eq:Map} \tcp*[r]{$\mathbf{M}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$}
+    Compute mask $\mathbf{m}_{i,j}$ according to \Cref{eq:MaskMap} \;
+    Repeat mask in channel dimension \tcp*[r]{Afterwards $\mathbf{m}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$}
+    \emph{Optional:} Disable mask for certain samples \;
+    Mask features $\Tilde{\mathbf{z}} = \mathbf{m} \odot \mathbf{z}$ \;
+    Compute loss $\mathcal{L}(w(\Tilde{\mathbf{z}}), \mathbf{y})$ and backpropagate to whole network
+    }
+}
+\caption{Self-Challenging Class Activation Maps (\scam)}
+\label{alg:ActivationMasking}
+\end{algorithm}
+
+Intuitively, constantly applying this masking for all samples within each batch disregards important features and results in relatively poor performance as the network isn't able to learn discriminant features in the first place. Therefore, applying the mask only for certain samples within each batch as mentioned by \citet[Secton~3.3]{huang2020selfchallenging} should yield a better performance. For convenience, we call this process \emph{mask batching}. On top of that, one could schedule the masking with in an increasing factor (\eg linear schedule) such that masking gets applied more in the later training epochs where discriminant features have been learned. Unfortunately, \citet{huang2020selfchallenging} don't provide an ablation study for different mask batching procedures, only for certain percentage levels, and their implementation doesn't schedule them. As a result, there is no intuition available on the performance effects for \rsc which could carry over to \scam. For our full ablation study on these \scam variants please see \Cref{sec:ablation_study_batching}.
+
+\section{Focusing Self-Challenging Class Activation Maps}
+\citet{Bae2020RethinkingCAM} \citet{sun2020fixing}
+
 
 \section{Experiments}
 \subsection{Preliminaries}
 \subsection{Domain Generalization Framework: DomainBed}
 \subsection{Tested Datasets}
+\subsection{Hyperparameter Distributions}
+\label{sec:ex_distributions}
+\subsection{Schedules}
+\label{sec:ex_schedules}
+LR schedule + batch schedule
 
 \section{Results}
 
 \section{Ablation Study}
+
+\subsection{Mask Batching}
+\label{sec:ablation_study_batching}
+
+\begin{table}[]
+    \centering
+    \begin{tabular}{lcccccccccccc}
+    \toprule
+    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} &  \textbf{Batch} & \textbf{Feature} & \textbf{P}* & \textbf{A}* & \textbf{C}* & \textbf{S}* & \textbf{Batch}* & \textbf{Feature}* \\
+    \midrule
+    \scam & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$  && \\
+    \scamb & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scambs & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamdb & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamdbs & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamc & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamcs & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamdc & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamdcs & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \scamt & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$  && \\
+    \scamts & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$   &&\\
+    \scamdt & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$  &&\\
+    \scamdts & $\pm$ & $\pm$ & $\pm$ & $\pm$ & & & $\pm$ & $\pm$ & $\pm$ & $\pm$ && \\
+    \bottomrule
+    \end{tabular}
+    \caption[Ablation study for the \scam mask application procedure on the PACS dataset]{Ablation study for the \scam mask application procedure on the PACS dataset using training-domain validation (left) and oracle validation denoted with * (right). We use a ResNet-18 backbone, the schedules from \Cref{sec:ex_schedules}, $50$ hyperparameter samples with distributions from \Cref{sec:ex_distributions}, and $3$ split seeds for standard deviations. The columns ``Batch'' and ``Feature'' show the chosen hyperparameter factors based on the respective validation technique.}
+    \label{tab:scam_batching}
+\end{table}

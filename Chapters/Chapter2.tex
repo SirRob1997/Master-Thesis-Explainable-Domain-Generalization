@@ -18,6 +18,10 @@
 \newcommand{\imagequadsize}{1cm}
 \newcommand{\domainsize}[1]{\scriptsize{#1}}
 
+\newcommand{\featureg}{\mathbf{g}_\mathbf{z}}
+\newcommand{\featuregl}{\mathbf{g}_{\mathbf{z},i,j}}
+\newcommand{\featurega}{\Tilde{\mathbf{g}}_\mathbf{z}}
+\newcommand{\featuregal}{\Tilde{\mathbf{g}}_{\mathbf{z}, i, j}}
 
 \chapter{Domain Generalization} % Main chapter title
 \label{DomainGeneralization} 
@@ -96,7 +100,7 @@ The difference of this approach when compared to ordinary supervised learning is
         Semi-supervised learning & $L^{1}, U^{1}$ & $U^1$ \\ 
         Multitask learning & $L^{1}, \ldots, L^{d_{\mathrm{tr}}}$ & $U^{1}, \ldots, U^{d_{\mathrm{tr}}}$ \\ 
         Continual (lifelong) learning & $L^{1}, \ldots, L^{\infty}$ & $U^{1}, \ldots, U^{\infty}$ \\ 
-        Domain adaption & $L^{1}, \ldots, L^{d_{\mathrm{tr}}}, U^{d_{\mathrm{tr}}+1}$ & $U^{d_{\mathrm{tr}}+1}$ \\ 
+        Domain Adaptation & $L^{1}, \ldots, L^{d_{\mathrm{tr}}}, U^{d_{\mathrm{tr}}+1}$ & $U^{d_{\mathrm{tr}}+1}$ \\ 
         Transfer learning & $U^{1}, \ldots, U^{d_{\mathrm{tr}}}, L^{d_{\mathrm{tr}}+1}$ & $U^{d_{\mathrm{tr}}+1}$ \\ 
         \textbf{Domain generalization} & $L^{1}, \ldots, L^{d_{\mathrm{tr}}}$ & $U^{d_{\mathrm{tr}}+1}$ \\ 
     \bottomrule
@@ -113,7 +117,7 @@ There exist subtle differences within this task which are called \emph{single-} 
 
 \section{Related concepts and their differences}
 
-Members of the causality community might know the task of domain generalization under the term \emph{learning from multiple environments} \citep{arjovsky2019invariant, gulrajani2020search, PetBuhMei15}. While these two concepts refer to the same task, there exist quite a few related techniques which we want to highlight here and distinguish in their scope. In particular, we focus on ``Generic neural network regularization'' and ``Domain Adaption'' since these are very closely related and sometimes hard to distinguish if at all. The overview in \Cref{tab:learning_setups}, however, includes even more learning setups to properly position this concept into the machine learning landscape.
+Members of the causality community might know the task of domain generalization under the term \emph{learning from multiple environments} \citep{arjovsky2019invariant, gulrajani2020search, PetBuhMei15}. While these two concepts refer to the same task, there exist quite a few related techniques which we want to highlight here and distinguish in their scope. In particular, we focus on ``Generic neural network regularization'' and ``Domain Adaptation'' since these are very closely related and sometimes hard to distinguish if at all. The overview in \Cref{tab:learning_setups}, however, includes even more learning setups to properly position this concept into the machine learning landscape.
 
 \subsection{Generic Neural Network Regularization}
 
@@ -122,13 +126,13 @@ In theory, generic model regularization which aims to prevent neural networks fr
 Generally, deploying some of these methods when aiming for out-of-distribution generalization can be a good idea and should definitely be considered for the task of domain generalization.
 
 
-\subsection{Domain Adaption}
+\subsection{Domain Adaptation}
 
-\emph{Domain adaption} (DA) is often mentioned as a closely related task in domain generalization literature \citep{MotiianPAD17, VolpiM19, QiaoZP20}. When compared, domain adaption has additional access to an unlabeled dataset from the target domain \citep{mancini2020, Csurka17}. Formally, aside from the set of source domains $\mathcal{S}$ and the domain datasets $D^d$, as outline in \Cref{sec:domain_gen_problem}, we have access to target samples $\mathcal{T} = \left\{\mathbf{x}_{1}^{d_\mathrm{te}},\dots,\mathbf{x}_{n_{d_{\mathrm{te}}}}^{d_\mathrm{te}}\right\}$ that are from the target domain $\mathbf{x}_j^{d_{ \mathrm{te}}} \sim P(X^{d_{ \mathrm{te}}},Y^{d_{ \mathrm{te}}})$ but their labels remain unknown in training since we want to predict them during testing. As a result, domain generalization is considered to be the harder problem of the two. This difference is also shown in \Cref{tab:learning_setups}.
+\emph{Domain Adaptation} (DA) is often mentioned as a closely related task in domain generalization literature \citep{MotiianPAD17, VolpiM19, QiaoZP20}. When compared, domain Adaptation has additional access to an unlabeled dataset from the target domain \citep{mancini2020, Csurka17}. Formally, aside from the set of source domains $\mathcal{S}$ and the domain datasets $D^d$, as outline in \Cref{sec:domain_gen_problem}, we have access to target samples $\mathcal{T} = \left\{\mathbf{x}_{1}^{d_\mathrm{te}},\dots,\mathbf{x}_{n_{d_{\mathrm{te}}}}^{d_\mathrm{te}}\right\}$ that are from the target domain $\mathbf{x}_j^{d_{ \mathrm{te}}} \sim P(X^{d_{ \mathrm{te}}},Y^{d_{ \mathrm{te}}})$ but their labels remain unknown in training since we want to predict them during testing. As a result, domain generalization is considered to be the harder problem of the two. This difference is also shown in \Cref{tab:learning_setups}.
 
-Earlier methods in this space deploy hand-crafted features to reduce the difference between the source and the target domains \citep{ManciniPBC018}. Like that, \emph{instance-based methods} try to re-weight source samples according to target similarity \citep{GongGS13, HuangSGBS06, YamadaSR12} or \emph{feature-based methods} try to learn a common subspace \citep{FernandoHST13, GongSSG12, LongD0SGY13, BaktashmotlaghHLS13}. More recent works focus on \emph{deep domain adaption} based on deep architectures where domain invariant features are learned utilizing supervised neural networks \citep{BousmalisTSKE16, CarlucciPCRB17, GaninL15, GhifaryKZBL16}, autoencoders \citep{ZengOWW14}, or generative adversarial networks (GANs) \citep{BousmalisSDEK17, ShrivastavaPTSW17, TzengHSD17}. These deep neural network based architectures significantly outperform the approaches for hand-crafted features \citep{ManciniPBC018}.
+Earlier methods in this space deploy hand-crafted features to reduce the difference between the source and the target domains \citep{ManciniPBC018}. Like that, \emph{instance-based methods} try to re-weight source samples according to target similarity \citep{GongGS13, HuangSGBS06, YamadaSR12} or \emph{feature-based methods} try to learn a common subspace \citep{FernandoHST13, GongSSG12, LongD0SGY13, BaktashmotlaghHLS13}. More recent works focus on \emph{deep domain Adaptation} based on deep architectures where domain invariant features are learned utilizing supervised neural networks \citep{BousmalisTSKE16, CarlucciPCRB17, GaninL15, GhifaryKZBL16}, autoencoders \citep{ZengOWW14}, or generative adversarial networks (GANs) \citep{BousmalisSDEK17, ShrivastavaPTSW17, TzengHSD17}. These deep neural network based architectures significantly outperform the approaches for hand-crafted features \citep{ManciniPBC018}.
 
-Even though domain adaptation and domain generalization both try to reducing dataset bias, they are not compatible to each other \citep{GhifaryBKZ17}. Hence, domain adaptation methods often cannot be directly used for domain generalization or vice versa \citep{GhifaryBKZ17}. For this work, we don't rely on the simplifying assumptions of domain adaption, but instead tackle the more challenging task of domain generalization.
+Even though domain adaptation and domain generalization both try to reducing dataset bias, they are not compatible to each other \citep{GhifaryBKZ17}. Hence, domain adaptation methods often cannot be directly used for domain generalization or vice versa \citep{GhifaryBKZ17}. For this work, we don't rely on the simplifying assumptions of domain Adaptation, but instead tackle the more challenging task of domain generalization.
 
 \section{Previous Works}
 
@@ -173,7 +177,6 @@ Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a met
 
 
 \section{Common Datasets}
-
 There exist several datasets which are commonly used in domain generalization research. Here, we want to introduce the most popular choices as well as interesting datasets to consider. We give an overview over \emph{Rotated MNIST}, \emph{Colored MNIST}, \emph{Office-Home}, \emph{VLCS}, \emph{PACS}, \emph{Terra Incognita}, \emph{DomainNet}, and \emph{ImageNet-C}. Currently, the most popular choices include ``PACS'', ``VLCS'', and ``Office-Home''.
 
 \subsection{Rotated MNIST}
@@ -274,13 +277,97 @@ The ImageNet-C dataset \citep{HendrycksD19} contains images out of ImageNet \cit
 
 Overall, the dataset provides all \num{1000} ImageNet classes where each image has the standard dimension of $3 \times 224 \times 224$.
 
+\section{Considerations regarding model validation}
 
-%\subsection{ImageNet-R}
-%\citet{hendrycks2020faces}
+In traditional supervised learning setups we train our model on the training dataset, validate its hyperparameters (\eg number of layers or hidden units in a neural network) on a separate validation dataset, and finally evaluate our model on an unused test dataset. Notice, that the validation dataset should be distributed identically to the test data to properly fit the hyperparameters of our architecture. This is obviously not a straightforward process for domain generalization, as we lack a proper validation dataset with the needed statistical properties. There exist several approaches to this problem, some of them being more grounded than others. Here we give an overview over three approaches outlined by \citet{gulrajani2020search}. 
+
+\paragraph{Training-domain validation set} 
+Here, each training domain gets further split into training and validation subsets where all validation subsets across domains get pooled into one global validation set. We can then maximize the model's performance on that global validation set to set the hyperparameters. This approach assumes the similarity of training and test distributions.
+
+\paragraph{Leave-one-domain-out cross-validation}
+We can train $d_{\mathrm{tr}}$ models with equal hyperparameters based on the $d_{\mathrm{tr}}$ training domains where we each hold one of the domains out of training. This allows us to validate on the held-out domain and average among them to calculate the global held-out domain accuracy. Based on that, we can choose a model and re-train it on all of the training domains. 
+
+\paragraph{Test-domain validation set (oracle)}
+A rather statistically biased way of validating the models hyperparameters is incorporating the test dataset as a validation dataset. Because of this, it is considered bad style and should be avoided or at least explicitly marked. However, one method which is possible is to restrict the test dataset access as done by \citet{gulrajani2020search} where they allow $20$ queries per algorithm.   
+
+Other works have also come up with other methods to choose the hyperparameters. For example, \citet{krueger2020outofdistribution} validate the hyperparameters on all domains of the VLCS dataset an then apply the settings to PACS while \citet{DInnocenteC18} use a validation technique which  combines probabilities specific to their method. 
+
+\section{Deep-Dive into Representation Self-Challenging}
+\label{sec:RSC}
+Since our method uses ideas from Representation Self-Challenging (RSC) \citep{huang2020selfchallenging}, we explain their approach more in detail here. They deploy two RSC variants called Spatial-Wise RSC and Channel-Wise RSC which they randomly alternate between. Generally, these are shown in \Cref{alg:SpatialRSC} and operate on features after the last convolutional layer. 
+
+First, RSC calculates the the gradient of the upper layer with respect to the latent feature representation according to \Cref{eq:gz}. Here, $\odot$ is the element-wise product and $\mathbf{y}$ is the one-hot encoding of the ground truth.
+\begin{equation}
+    \featureg = \frac{\partial( w(\mathbf{z}) \odot \mathbf{y})}{\partial \mathbf{z}}
+    \label{eq:gz}
+\end{equation}
+Afterwards, they average pool the gradients to obtain $\featurega$. The key difference between the Spatial-Wise and Channel-Wise RSC lies in the average pooling done to compute $\featurega$ in line $5$ and the duplication in line $6$ in \Cref{alg:SpatialRSC}. While for Spatial-Wise RSC average pooling is done on the channel dimension according to \Cref{eq:SpatialRSCavg} yielding $\featuregal \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ for spatial location $(i,j)$, in Channel-Wise RSC the same computation is done on the spatial dimension with \Cref{eq:ChannelRSCavg} yielding $\featurega \in \mathbb{R}^{1 \times 1 \times K}$, a vector with size of the feature map count.
+\begin{equation}
+\label{eq:SpatialRSCavg}
+     \featuregal = \frac{1}{K} \sum_{k=1}^K \featuregl^k
+\end{equation}
+\begin{equation}
+\label{eq:ChannelRSCavg}
+     \featurega = \frac{1}{H_\mathbf{z}W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \featuregl
+\end{equation}
+Depending on which dimensions are missing to get back to the original size of $\mathbf{z}, \featureg \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$, the computed values get duplicated along these dimensions. In the case of the Spatial-Wise RSC these are the channels, while for the Channel-Wise RSC these are the spatial dimensions. 
+
+Next, \citet{huang2020selfchallenging} compute the $(100-p)\mathrm{th}$ percentile with the threshold value as $q_p$ and compute the mask $\mathbf{m}_{i,j}$ for spatial location $(i,j)$ based on \Cref{eq:Masking}. This mask is set to $0$ for the corresponding Top-$p$ percentage elements in $\featurega$ and therefore has the same shape. 
+\begin{equation}
+\mathbf{m}_{i,j}=\left\{\begin{array}{ll}
+0, & \text { if } \quad \featuregal \geq q_{p} \\
+1, & \text { otherwise }
+\end{array}\right.
+\label{eq:Masking}
+\end{equation}
+\citet{huang2020selfchallenging} apply the computed mask on the feature representation to yield $\Tilde{\mathbf{z}}_p = \mathbf{z} \odot \mathbf{m}$ which they validate using \Cref{eq:changeval}. This computes the difference with and without the masking in the correct class probabilities and yields a difference score for each sample in $\mathbf{c}$.  
+\begin{equation}
+   \mathbf{c} = \sum_{c=1}^C  \left(\mathtt{softmax}(w(\mathbf{z})) \odot \mathbf{y} - \mathtt{softmax}(w(\Tilde{\mathbf{z}}_p)) \odot \mathbf{y} \right)_c
+   \label{eq:changeval}
+\end{equation}
+A positive value represents that the masking for that sample made the classifier \emph{less} certain about the correct class while a negative value represents the opposite and made the classifier \emph{more} certain about the correct class. Similar to previously, \citet{huang2020selfchallenging} calculate Top-$p$ of the positive values with the threshold as $b_p$. They revert the whole masking for all Top-$p$ samples inside each batch according to \Cref{eq:MaskingReversion} where each spatial location $(i,j)$ of the mask associated with sample $n$ gets set back to $1$ if the condition applies, otherwise the mask values remain unchanged.
+\begin{equation}
+    \mathbf{m}^n_{i,j}=\left\{\begin{array}{ll}
+1, & \text { if } \quad \mathbf{c}_n \leq b_{p} \\
+-, & \text { otherwise }
+\end{array}\right.
+\label{eq:MaskingReversion}
+\end{equation}
+Finally, we mask the features with the obtained final mask to obtain $\Tilde{\mathbf{z}} = \mathbf{z} \odot \mathbf{m}$, compute the loss $\mathcal{L}(w(\Tilde{\mathbf{z}}), \mathbf{y})$ and backpropagate to the whole network.
+
+\begin{algorithm}[t]
+    \SetAlgoLined
+    \SetNoFillComment
+    \SetKwInOut{Input}{Input}
+    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $p$, epochs $T$}
+    %\KwResult{how to write algorithm with \LaTeX2e }
+    %initialization\;
+    \BlankLine
+    \While{$epoch \leq T$}{
+    \For{every sample (or batch) $\mathbf{x}, \mathbf{y}$}{
+    Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
+    Compute gradient $\featureg$ w.r.t features according to \Cref{eq:gz} \;
+    Compute $\featuregal$ by avg. pooling using $50\%$ \Cref{eq:SpatialRSCavg} or $50\%$ \Cref{eq:ChannelRSCavg} \;
+    Duplicate $\featurega$ along channel/spatial dimension for initial shape\;
+    Compute mask $\mathbf{m}_{i,j}$ according to \Cref{eq:Masking}\;
+    Mask features to obtain $\Tilde{\mathbf{z}}_p = \mathbf{m} \odot \mathbf{z}$ \tcp*[r]{Evaluate effect of preliminary mask $\downarrow$}
+    Compute change $\mathbf{c}$ according to \Cref{eq:changeval} \;
+    Revert masking for specific samples according \Cref{eq:MaskingReversion} \;
+    Mask features $\Tilde{\mathbf{z}} = \mathbf{m} \odot \mathbf{z}$ \;
+    Compute loss $\mathcal{L}(w(\Tilde{\mathbf{z}}), \mathbf{y})$ and backpropagate to whole network
+    }
+}
+\caption{Spatial-Wise / Channel-Wise RSC}
+\label{alg:SpatialRSC}
+\end{algorithm}
 
 
+\paragraph{Problems}
+Interestingly, since many architectures like ResNet-18/ResNet-50 deploy average pooling in their forward pass after the last convolutional layer, na\"ive Spatial-Wise RSC doesn't make sense since average pooling is done along the channel dimension and such architectures additionally average pool on the spatial dimension. This results in feature values getting spread evenly across the image regardless of the masking. Even though this isn't mentioned in their paper, they address this issue in their official repository and propose an alternative computation. For that, they calculate the mean $\featuregal$ from \Cref{eq:SpatialRSCavg} on the gradients of features from the previous convolutional layer, instead of the last one, and downsample it by factor $0.5$ to match the size. Note, that this was only added \emph{after} it was specifically mentioned as an issue within their Github repository. 
+
+On top of that, 
 
 
-
+\paragraph{Our Results}
 
 

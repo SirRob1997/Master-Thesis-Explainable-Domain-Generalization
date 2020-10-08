@@ -251,6 +251,9 @@
 \renewcommand\thesubfigure{(\alph{subfigure})} % change the image numbering and reference link to (a),(b),(c), ...... format
 
 \RequirePackage[ruled, linesnumbered]{algorithm2e}
+\DontPrintSemicolon
+
+
 %----------------------------------------------------------------------------------------
 %	COLOURS
 %----------------------------------------------------------------------------------------
@@ -261,6 +264,9 @@
 \definecolor{darkspringgreen}{rgb}{0.09, 0.45, 0.27}
 \definecolor{darkred}{RGB}{141,45,57}
 \colorlet{mdtRed}{red!50!black}
+
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{darkred}{#1}}
+\SetCommentSty{mycommfont}
 
 \newcommand{\brightblue}[1]{\textcolor{bondiblue}{#1}}
 \newcommand{\darkgreen}[1]{\textcolor{darkspringgreen}{#1}}
