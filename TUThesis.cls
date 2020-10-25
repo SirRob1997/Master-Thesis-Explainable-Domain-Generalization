@@ -124,7 +124,8 @@
 \newenvironment{publications}{
     \chapter*{}
     \vspace{-1em}
-    {\Huge \textbf{List of Publications}}\\
+    {\Huge \textbf{List of Publications}}\\[1cm]
+    {\large Partial results of the presented work have been published at the following venues:}
 }
 
 \newenvironment{journals}[1][,]{

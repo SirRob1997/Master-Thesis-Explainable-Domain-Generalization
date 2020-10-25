@@ -4,7 +4,7 @@
 english, % ngerman for German
 onehalfspacing, % Single line spacing (singlespacing), alternatives: onehalfspacing or doublespacing
 % draft, % Uncomment to enable draft mode (no pictures, no links, overfull hboxes indicated)
-% nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
+ nolistspacing, % If the document is onehalfspacing or doublespacing, uncomment this to set spacing in lists to single
 %liststotoc, % Uncomment to add the list of figures/tables/etc to the table of contents
 %toctotoc, % Uncomment to add the main table of contents to the table of contents
 parskip, % Uncomment to add space between paragraphs
@@ -19,6 +19,7 @@ headsepline, % Uncomment to get a line under the header
 \usepackage{hyperref}       % hyperlinks
 \usepackage{wrapfig} % Add enbedded figure in the text
 \usepackage{textcomp}
+\usepackage{mathtools}
 \usepackage{cleveref}
 \usepackage{siunitx}
 \sisetup{group-minimum-digits = {3}}
@@ -150,7 +151,7 @@ headsepline, % Uncomment to get a line under the header
 %	NEW COMMAND DEFINITION
 %----------------------------------------------------------------------------------------
 \newcommand{\codestyle}[1]{\colorbox{gray!20}{\darkred{#1}}}
-
+\input{commands}
 % ======================================================================================== %
 %                                        START DOCUMENT
 % ======================================================================================== %
@@ -176,14 +177,13 @@ headsepline, % Uncomment to get a line under the header
 
 \input{Abstract/abstract.tex}
 
-
 {
 \let\cleardoublepage\clearpage
 \input{Copyrights/copyright.tex}
 \input{Declaration/declaration.tex}
 %\input{Dedication/dedication.tex}
 %\input{Acknowledgments/acknowledgments.tex}
-%\input{Publications/publications.tex}
+\input{Publications/publications.tex}
 {
   \hypersetup{linkcolor=black}
   \tableofcontents

@@ -1,28 +1,3 @@
-\newcommand*{\eg}{e.g.\@\xspace}
-\newcommand*{\ie}{i.e.\@\xspace}
-\newcommand*{\cf}{cf.\@\xspace}
-\newcommand{\amsbound}{\textsc{AMSBound}\xspace}
-\newcommand{\adabound}{\textsc{AdaBound}\xspace}
-\newcommand{\adam}{\textsc{Adam}\xspace}
-\newcommand{\momentum}{\textsc{Momentum}\xspace}
-\newcommand{\sgd}{\textsc{SGD}\xspace}
-\newcommand{\rmsprop}{\textsc{RMSProp}\xspace}
-\newcommand{\amsgrad}{\textsc{AMSGrad}\xspace}
-\newcommand{\adadelta}{\textsc{Adadelta}\xspace}
-\newcommand{\nag}{\textsc{NAG}\xspace}
-\newcommand{\nadam}{\textsc{Nadam}\xspace}
-\newcommand{\radam}{\textsc{Radam}\xspace}
-\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
-\newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
-\newcommand{\minus}{\raisebox{.4\height}{\scalebox{.8}{-}}}
-\newcommand{\imagequadsize}{1cm}
-\newcommand{\domainsize}[1]{\scriptsize{#1}}
-
-\newcommand{\featureg}{\mathbf{g}_\mathbf{z}}
-\newcommand{\featuregl}{\mathbf{g}_{\mathbf{z},i,j}}
-\newcommand{\featurega}{\Tilde{\mathbf{g}}_\mathbf{z}}
-\newcommand{\featuregal}{\Tilde{\mathbf{g}}_{\mathbf{z}, i, j}}
-
 \chapter{Domain Generalization} % Main chapter title
 \label{DomainGeneralization} 
 
@@ -35,9 +10,9 @@ Machine learning systems often lack \emph{out-of-distribution generalization} wh
 In supervised learning we are aiming to optimize the predictions $\mathbf{\hat{y}}$ for the values $\mathbf{y} \in \mathcal{Y}$ of a random variable $Y$, when presented with values $\mathbf{x} \in \mathcal{X}$ of a random variable $X$. These predictions are generated with a model predictor $f(\cdot;\boldsymbol{\theta}): \mathcal{X} \rightarrow \mathcal{Y}$ that is parameterized by parameters $\boldsymbol{\theta} \in \Theta$  and is assigning the predictions as $\mathbf{\hat{y}}=f(\cdot;\boldsymbol{\theta})$. To improve our predictions, we utilize a training dataset containing $n$ input-output pairs denoted as $D=\left\{\left(\mathbf{x}_{i}, \mathbf{y}_{i}\right)\right\}_{i=1}^{n}$ where each sample $(\mathbf{x}_i,\mathbf{y}_i)$ is ideally drawn identically and independently distributed (i.i.d.) from a single joint probability distribution $P(X,Y)$. By using a loss term $\mathcal{L} (\mathbf{\hat{y}};\mathbf{y}): \mathcal{Y} \times \mathcal{Y} \rightarrow \mathbb{R}^{+}$, which quantifies how different the prediction $\mathbf{\hat{y}}$ is from the ground truth $\mathbf{y}$, we would like to minimize the risk $R(f) = \mathbb{E}_{(\mathbf{x}, \mathbf{y}) \sim P}[\mathcal{L}(f(\mathbf{x}; \boldsymbol{\theta}), \mathbf{y})]$ of our model. Since we only have access to the distribution $P(X,Y)$ through a proxy in the form of the dataset $D$, we are instead minimizing the empirical risk $R_{\mathrm{emp}}(f)=\frac{1}{n} \sum_{i=1}^n \mathcal{L}\left(f\left(\mathbf{x}_{i};\boldsymbol{\theta}\right), \mathbf{y}_{i}\right)$ by adding up the loss terms of each sample. One common choice for this is the Cross-Entropy (CE) Loss which is shown in \Cref{eq:cross_entropy}.
 \begin{equation}
 \label{eq:cross_entropy}
-    \mathcal{L}_\mathrm{ce}(\mathbf{y}, \mathbf{\hat{y}})=-\sum_{c=1}^{K} y_c \cdot \log \left(\hat{y}_c\right)
+    \mathcal{L}_{ce}(\mathbf{y}, \mathbf{\hat{y}})=-\sum_{c=1}^{C} y_c \cdot \log \left(\hat{y}_c\right)
 \end{equation}
-Here, $\mathbf{y}$ is the one-hot vector representing the ground truth class, $\mathbf{\hat{y}}$ is the \emph{softmax} output of the model, and $y_i$, $\hat{y}_i$ are the $c$-th dimension of $\mathbf{y}$ and $\mathbf{\hat{y}}$.
+Here, $\mathbf{y}$ is the one-hot vector representing the ground truth class, $\mathbf{\hat{y}}$ is the \emph{softmax} output of the model, and $y_c$, $\hat{y}_c$ are the $c$-th dimension of $\mathbf{y}$ and $\mathbf{\hat{y}}$.
 
 The occurring minimization problem is then often solved through iterative gradient based optimization algorithms \eg \sgd{} \citep{Robbins1951} or \adam \citep{Kingma2015} which perform reasonably well for the non-convex, continuous loss surfaces produced by modern machine learning problems.
 
@@ -141,8 +116,9 @@ Most commonly, work in \emph{domain generalization} can be divided into methods 
 Since literature in the domain generalization space is very broad, we utilized \citet[Appendix A]{gulrajani2020search} for an overview and to identify relevant literature while individually adding additional works and more detailed information where necessary.  
 
 \subsection{Learning invariant features}
+\label{sec:invariant_features}
 
-Methods with this approach typically try to minimize the difference between source domains. They assume that with this approach the features will be domain-invariant and therefore will have a good performance for unseen testing domains \citep{huang2020selfchallenging}.
+Methods which try to learn invariant features typically minimize the difference between source domains. They assume that with this approach the features will be domain-invariant and therefore will have a good performance for unseen testing domains \citep{huang2020selfchallenging}.
 
 Some of the earliest works on learning invariant features were \emph{kernel methods} applied by \citet{MuandetBS13}  where they look for a feature transformation that minimizes the across-domain dissimilarity between transformed feature distributions while preserving the functional relationship between original features and targets. In recent years, there have been approaches following a similar kernel based approach \citep{LiGTLT18, LiTGLLZT18}, sometimes while maximizing class separability \citep{Hu0CC19, GhifaryBKZ17}. As an early method, \citet{FangXR13} introduce Unbiased Metric Learning (UML) with a SVM metric that enforces the neighborhood of samples to contain samples with the same class label but from other training domains.
 
@@ -173,8 +149,6 @@ domain-specific deep neural networks with a structured low-rank constraint and a
 \emph{Data Augmentation} remains a competitive method for generalizing to unseen domains \citep{zhang2019unseen}. Works in this segment try to extend the source domain to a wider range of domains by augmenting the available training domains \citep{huang2020selfchallenging}. However, to deploy an efficient procedure for that, human experts need to consider the data at hand to develop a useful routine \citep{gulrajani2020search}.
 
 Several works have used the \textsc{mixup} \citep{ZhangCDL18} algorithm as a method to merge samples from different domains \citep{XuZNLWTZ20, yan2020improve, WangLK20, mancini2020}. Other works have also tried removing textural information from images \citep{WangHLX19} or shifting it more towards shapes \citep{nam2019reducing, asadi2019shape}. \citet{CarlucciDBCT19} used jigsaw puzzles of image patches as a classification task to show that this improves domain generalization while \citet{VolpiNSDMS18} demonstrate that adversarial data augmentation on a single domain is sufficient. Further, \citet{VolpiM19} use popular image transformations (\eg brightness, contrast, sharpness) with differing intensity levels to train a more robust model or \citet{somavarapu2020frustratingly} use other stylizing techniques. Several methods also utilize GANs to augment the available training data  \citep{RahmanFBS19, ZhouYHX20, ShankarPCCJS18} or use other methods to generate synthetic domains \citep{zhou2020learning}. \citet{QiaoZP20} deploy an adversarial domain augmentation approach using a Wasserstein Auto-Encoder.
-
-
 
 \section{Common Datasets}
 There exist several datasets which are commonly used in domain generalization research. Here, we want to introduce the most popular choices as well as interesting datasets to consider. We give an overview over \emph{Rotated MNIST}, \emph{Colored MNIST}, \emph{Office-Home}, \emph{VLCS}, \emph{PACS}, \emph{Terra Incognita}, \emph{DomainNet}, and \emph{ImageNet-C}. Currently, the most popular choices include ``PACS'', ``VLCS'', and ``Office-Home''.
@@ -357,16 +331,13 @@ Finally, we mask the features with the obtained final mask to obtain $\Tilde{\ma
     Compute loss $\mathcal{L}(w(\Tilde{\mathbf{z}}), \mathbf{y})$ and backpropagate to whole network
     }
 }
-\caption{Spatial-Wise / Channel-Wise RSC}
+\caption{Spatial- and Channel-Wise RSC}
 \label{alg:SpatialRSC}
 \end{algorithm}
 
 
 \paragraph{Problems}
 Interestingly, since many architectures like ResNet-18/ResNet-50 deploy average pooling in their forward pass after the last convolutional layer, na\"ive Spatial-Wise RSC doesn't make sense since average pooling is done along the channel dimension and such architectures additionally average pool on the spatial dimension. This results in feature values getting spread evenly across the image regardless of the masking. Even though this isn't mentioned in their paper, they address this issue in their official repository and propose an alternative computation. For that, they calculate the mean $\featuregal$ from \Cref{eq:SpatialRSCavg} on the gradients of features from the previous convolutional layer, instead of the last one, and downsample it by factor $0.5$ to match the size. Note, that this was only added \emph{after} it was specifically mentioned as an issue within their Github repository. 
-
-On top of that, 
-
 
 \paragraph{Our Results}
 
