@@ -18,7 +18,7 @@ For the mask batching ablation study we use \adam \citep{Kingma2015} and the dis
         batch drop factor  & $\uni{0}{1}$ \\
          \bottomrule 
     \end{tabular}
-    \caption[Hyperparameters and distributions used in random search for the mask batching ablation study]{Hyperparameters and distributions used in random search for the mask batching ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor*{\cdot}$ is the floor operator.}
+    \caption[Hyperparameters and distributions used for the mask batching ablation study]{Hyperparameters and distributions used in random search for the mask batching ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor*{\cdot}$ is the floor operator.}
     \label{tab:abl-distributions-mask-batching}
 \end{table}
 
@@ -41,6 +41,7 @@ For the mask batching ablation study we use \adam \citep{Kingma2015} and the dis
 
 For the mask ablation study, we use \adam \citep{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is \emph{not} scheduled. This corresponds to the tuning distributions provided in \domainbed.
 \begin{table}[!htbp]
+\small
     \centering
     \begin{tabular}{ll}
         \toprule
@@ -63,6 +64,6 @@ For the mask ablation study, we use \adam \citep{Kingma2015} and the distributio
         mlp dropout & $[0, 0.1, 0.5]$ \\
         \bottomrule 
     \end{tabular}
-    \caption[Hyperparameters and distributions used in random search for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor*{\cdot}$ is the floor operator.}
+    \caption[Hyperparameters and distributions used for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$, $\floor*{\cdot}$ is the floor operator, and $[\cdot]$ represents a choice.}
     \label{tab:abl-distributions-mask}
 \end{table}
