@@ -71,15 +71,15 @@ By upsampling the map to the image size, they are able to visualize the image re
 \end{figure}
 The drawback of their approach is, that their method can only be applied to networks which use the \texttt{GAP(Convs)} $\rightarrow$ \texttt{Fully Connected Layer (FC)} $\rightarrow$ \texttt{softmax} architecture at the end \citep{xie2020explainable}. 
 
-\citet{SelvarajuCDVPB17} solve this by generalizing the CAMs to gradient-weighted class activation maps (Grad-CAMs). Since their approach only requires a the final activation function to be differentiable, they are generally applicable to a broader range of CNN architectures \citep{SelvarajuCDVPB17, xie2020explainable}. For that, they compute an importance score $\alpha_{k,c}$ shown in \Cref{eq:grad_cam_importance}.
+\citet{SelvarajuCDVPB17} solve this by generalizing the CAMs to gradient-weighted class activation maps (Grad-CAMs). Since their approach only requires a the final activation function to be differentiable, they are generally applicable to a broader range of CNN architectures \citep{SelvarajuCDVPB17, xie2020explainable}. For that, they compute an importance score $\Tilde{\mathbf{g}}_{\mathbf{z},c}^k$ shown in \Cref{eq:grad_cam_importance}.
 \begin{equation}
 \label{eq:grad_cam_importance}
-    \alpha_{k,c} = \frac{1}{m\cdot n}\sum_{i=1}^m\sum_{j=1}^n \frac{\partial y_c}{\partial \mathbf{A}_{k,i,j}}
+     \Tilde{\mathbf{g}}_{\mathbf{z},c}^k = \frac{1}{H_\mathbf{z}W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \frac{\partial y_c}{\partial \mathbf{z}^k_{i,j}}
 \end{equation}
-Here, $y_c$ is the score before \texttt{softmax} and we calculate the gradient with respect to the feature map $\mathbf{A}_k$ in the final convolutional layer for every neuron positioned at $(i,j)$ in the $m\times n$ feature map \citep{SelvarajuCDVPB17, xie2020explainable}. Afterwards, these importance scores get linearly combined for every feature map as shown in \Cref{eq:grad_cam_map} where they get additionally passed through a \texttt{ReLU} function.
+Here, $y_c$ is the score before \texttt{softmax} and we calculate the gradient with respect to the feature map $\mathbf{z}^k$ in the final convolutional layer for every neuron positioned at $(i,j)$ in the $m\times n$ feature map \citep{SelvarajuCDVPB17, xie2020explainable}. Afterwards, these importance scores get linearly combined for every feature map as shown in \Cref{eq:grad_cam_map} where they get additionally passed through a \texttt{ReLU} function:
 \begin{equation}
 \label{eq:grad_cam_map}
-    \mathbf{M}_c = \operatorname{ReLU}\Big(\sum_k^K \alpha_{k,c} \mathbf{A}_k \Big)
+    \mathbf{M}_c = \mathtt{max}(0,\sum_{k=1}^K\Tilde{\mathbf{g}}_{\mathbf{z},c}^k \mathbf{z}^k)
 \end{equation}
 This computation inherently yields a $m \times n$ importance map ($14 \times 14$ for VGG \citep{SimonyanZ14a} and AlexNet \citep{KrizhevskySH12}) where we upsample it using bilinear interpolation onto the image size to yield the Grad-CAM.
 
@@ -157,6 +157,5 @@ While \citet{LiLCR18} need a decoder for visualizing the prototypes, \citet{Chen
 
 \section{Explainability for Domain Generalization}
 
-There exists one recent work by \citet{zunino2020explainable} which tries to combine both domain generalization and explainability. They deploy a saliency-based approach to guide the network to focus on the image regions that correspond to the ground-truth class label \citep{zunino2020explainable}. However, their approach uses a 2D binary map of pixel locations for the ground-truth object segmentation as input. This map contains a $1$ in a pixel location where the class label object is present and $0$ otherwise. While they were able to show that their method better focuses on regions that are relevant, we believe that this mostly comes from the additional annotations of class label objects which we identify as a major drawback. 
-
-This work tries to take a more sophisticated approach at combining domain generalization and explainability methods.
+To the best of our knowledge, the only work using explanations for domain generalization is \citet{zunino2020explainable}.
+They introduce a saliency based approach utilizing a 2D binary map of pixel locations for the ground-truth object segmentation as input. This map contains a $1$ in a pixel location where the class label object is present and $0$ otherwise. Even though they were able to show that their method better focuses on regions that are relevant, we identify the additional annotations of class label objects as a major drawback which we solve in this work. Indeed, we not only avoid the use of annotations by directly restoring to Grad-CAMs (see \Cref{sec:divcam}), but our idea is also different in spirit. In fact, we do not force the network to focus on relevant regions as in \cite{zunino2020explainable} but we want the network to use i) different explanations for the same objects (to achieve better generalization) and ii) the explanations to be consistent across domains (to avoid overfitting a single input distribution).

@@ -1,66 +1,88 @@
 \chapter{Proposed Methods}
 
 \section{Self-Challenging Class Activation Maps}
-In \Cref{sec:RSC} we introduce the concept of Representation Self-Challenging for domain generalization while in \Cref{sec:CAMs} class activation maps, and specifically Grad-CAM gets introduced. It is quite easy to see that the importance scores $\alpha_{k,c}$ in Grad-Cam from \Cref{eq:grad_cam_importance} are a generalization of the spatial mean $\featurega$ used in Channel-Wise RSC from \Cref{eq:ChannelRSCavg}. The spatial mean $\featurega$ only computes the gradient with respect to the features for the most probable class while the importance scores $\alpha_{k,c}$ are formulated theoretically for all possible classes but similarly compute the gradient with respect to the feature representation. Both perform spatial average pooling.  
+\label{sec:divcam}
 
-As an intuitive baseline, we propose Self-Challenging Class Activation Maps (\scam), combining the two approaches as shown in \Cref{alg:ActivationMasking}. For that, we extract the features, compute the gradients with respect to the features as in \Cref{eq:gz}, and perform spatial average pooling to yield $\featurega$ according to \Cref{eq:ChannelRSCavg}. Our method deviates from Channel-Wise RSC by next computing class activation maps $\mathbf{M} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ according to \Cref{eq:Map}.
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/Chapter4/model_figure-cropped.pdf}
+    \caption{Visualization of the \divcam training process}
+    \label{fig:divcam-overview}
+\end{figure}
+
+
+In \Cref{sec:RSC} we introduce the concept of Representation Self-Challenging for domain generalization while in \Cref{sec:CAMs} class activation maps, and specifically Grad-CAM gets introduced. It is quite easy to see that the importance scores $ \Tilde{\mathbf{g}}_{\mathbf{z},c}^k$ in Grad-Cam from \Cref{eq:grad_cam_importance} are a generalization of the spatial mean $\featurega$ used in Channel-Wise RSC from \Cref{eq:ChannelRSCavg}. The spatial mean $\featurega$ only computes the gradient with respect to the features for the most probable class while the importance scores $ \Tilde{\mathbf{g}}_{\mathbf{z},c}^k$ are formulated theoretically for all possible classes but similarly compute the gradient with respect to the feature representation. Both perform spatial average pooling.  
+
+Despite the effectiveness of the model, we believe the approach of \citet{huang2020selfchallenging} does not fully exploit the relation between a feature vector and the actual content of the image. We argue (and experimentally demonstrate) that we can directly use CAMs to construct the self-challenging task. In particular, while the raw target gradient models the significance of each channel in each spatial location for the prediction, CAMs allow us to better capture the actual importance of each image region. Thus, performing the targeted masking on highest CAM's values means explicitly excluding the most relevant {region} of the image that where used for the prediction, forcing the model to focus on other (and interpretable) visual cues for the recognizing the object of interests. 
+
+Therefore, as an intuitive baseline, we propose Self-Challenging Class Activation Maps (\scam), combining the two approaches as shown in \Cref{alg:ActivationMasking}. For that, during each step of the training procedure, we extract the features, compute the gradients with respect to the features as in \Cref{eq:gz}, and perform spatial average pooling to yield $\featurega$ according to \Cref{eq:ChannelRSCavg}. Our method deviates from Channel-Wise RSC by next computing class activation maps $\mathbf{M}_c \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ according to \Cref{eq:Map} for the ground truth class label.
 \begin{equation}
-    \mathbf{M} = \mathtt{max}(0,\sum_{k=1}^K\featurega^k \mathbf{z}^k)
-    \label{eq:Map}
+\label{eq:Map}
+    \mathbf{M}_c = \mathtt{max}(0,\sum_{k=1}^K\Tilde{\mathbf{g}}_{\mathbf{z},c}^k \mathbf{z}^k)
 \end{equation}
-Based on these maps and similar to \Cref{eq:Masking}, we compute a mask $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ for the Top-$p$ percentile of map activations as \Cref{eq:MaskMap}. 
+Based on these maps and similar to \Cref{eq:Masking}, we compute a mask $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ for the Top-$p$ percentile of map activations as: 
 \begin{equation}
-\mathbf{m}_{i,j}=\left\{\begin{array}{ll}
-0, & \text { if } \quad \mathbf{M}_{i,j} \geq q_{p} \\
+\mathbf{m}_{c,i,j}=\left\{\begin{array}{ll}
+0, & \text { if } \quad \mathbf{M}_{c, i,j} \geq q_{p} \\
 1, & \text { otherwise }
 \end{array}\right.
 \label{eq:MaskMap}
 \end{equation}
-As class activation maps and the corresponding masks are averaged along the channel dimension, we duplicate the mask along all channels to yield a mask with the same size of the features $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$ which can directly be multiplied with the features to mask them. For the masked features, we compute the Cross-Entropy Loss from \Cref{eq:cross_entropy} and backpropagate the gradient of the loss to the whole network to update the parameters.
+As class activation maps and the corresponding masks are averaged along the channel dimension to be specific for each spatial location, we duplicate the mask along all channels to yield a mask with the same size of the features $\mathbf{m} \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$ which can directly be multiplied with the features to mask them and to regularized the training procedure:
+\begin{equation}
+\label{eq:mutate}
+\Tilde{\mathbf{z}} = \mathbf{m} \odot \mathbf{z},
+\end{equation}
+where $\odot$ is the Hadamard product. The new feature vector $\Tilde{\mathbf{z}}$ is used as input to the classifier $w$ in place of the original $\mathbf{z}$ to regularize the training procedure. For the masked features, we compute the Cross-Entropy Loss from \Cref{eq:cross_entropy} and backpropagate the gradient of the loss to the whole network to update the parameters.
+
+Intuitively, constantly applying this masking for all samples within each batch disregards important features and results in relatively poor performance as the network isn't able to learn discriminant features in the first place. Therefore, applying the mask only for certain samples within each batch as mentioned by \citet[Secton~3.3]{huang2020selfchallenging} should yield a better performance. For convenience, we call this process \emph{mask batching}. On top of that, one could schedule the mask batching with an increasing factor (\eg linear schedule) such that masking gets applied more in the later training epochs where discriminant features have been learned. We apply the mask only if the sample $n$ is within the $(100-b)\mathrm{th}$ percentile of confidences for the correct class and reset the mask otherwise by setting each spatial location $(i,j)$ back to $1$:
+\begin{equation}
+    \mathbf{m}^n_{c,i,j}=\left\{\begin{array}{ll}
+1, & \text { if } \quad \mathbf{c}^n \leq q_{b} \\
+-, & \text { otherwise }
+\end{array}\right.
+\label{eq:MaskingReversion}
+\end{equation}
+ where $ \mathbf{c}^n$ is is the confidence on the ground truth for sample $n$.. For our full ablation study on applying the masks within each batch, please see \Cref{sec:ablation_study_batching}.
+
+\subsection{Focusing on the right features}
+To try and improve the effectiveness of our CAM-based regularization approach, we can borrow some practices from the weakly localization literature. In particukar, we explore the use of Homogeneous Negative CAMs (HNC) \citep{sun2020fixing} and Threshold Average Pooling (TAP) \citep{Bae2020RethinkingCAM}. Both methods improve the performance of ordinary CAMs and focus them better on the relevant aspects of an image. 
+
+\subsubsection{Global Average Pooling bias for small activation areas}
+According to \citet{Bae2020RethinkingCAM}, the first problem of traditional class activation maps is that the activated areas for each feature map differ by channel because they capture different class information which isn't properly reflected in the global average pooling operation. Since every channel is globally averaged, smaller feature activation areas result in smaller globally averaged values despite a similar maximum activation value. This doesn't necessarily mean that one of the features is more relevant for the prediction though. To combat the smaller value for the prediction, the weight $w_{k,c}$ corresponding to the smaller value, is often trained to be higher when comparing the two \citep{Bae2020RethinkingCAM}. Instead of the global average pooling operation, they propose \emph{Threshold Average Pooling} (TAP). When adapting their approach for our notation, we receive \Cref{eq:tap} where $\tau_{t a p} = \theta_{tap} \cdot \mathtt{max}(\Tilde{\mathbf{z}}^k)$ with $\theta_{tap} \in [0,1)$ as a hyperparameter and $p^k_{tap}$ denotes the scalar from the $k$-th channel of $\mathbf{p}_{tap}$ as it is a $k$-dimensional vector. 
+\begin{equation}
+\label{eq:tap}
+p^k_{tap} =\frac{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right) \Tilde{\mathbf{z}}^k_{i,j}}{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right)}
+\end{equation}
+When incorporating this into out method, this results in changing the global average pooling after the last convolutional layer in the ResNet architecture to a threshold average pooling. Generally, this plug-in replacement can be seen as a trade-off between \emph{global max pooling} which is better at identifying the important activations of each channel and \emph{global average pooling} which has the advantage that it expands the activation to broader regions, allowing the loss to backpropagate.
 
 \begin{algorithm}[t]
     \SetAlgoLined
-    \SetNoFillComment
     \SetKwInOut{Input}{Input}
-    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $p$, epochs $T$}
-    %\KwResult{how to write algorithm with \LaTeX2e }
-    %initialization\;
+    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $f,b$, epochs $T$}
     \BlankLine
     \While{$epoch \leq T$}{
-    \For{every sample (or batch) $\mathbf{x}, \mathbf{y}$}{
-    Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
-    Compute gradient $\featureg$ w.r.t features according to \Cref{eq:gz} \;
-    Spatial avg. pooling to obtain $\featurega$ according to \Cref{eq:ChannelRSCavg} \tcp*[r]{$\featurega$ has shape $\mathbb{R}^{1 \times 1 \times K}$}
-    Compute class activation maps $\mathbf{M}$ with \Cref{eq:Map} \tcp*[r]{$\mathbf{M}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$}
-    Compute mask $\mathbf{m}_{i,j}$ according to \Cref{eq:MaskMap} \;
-    Repeat mask in channel dimension \tcp*[r]{Afterwards $\mathbf{m}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$}
-    \emph{Optional:} Disable mask for certain samples \;
-    Mask features $\Tilde{\mathbf{z}} = \mathbf{m} \odot \mathbf{z}$ \;
-    Compute loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ and backpropagate to whole network
+        \For{every batch $\mathbf{x}, \mathbf{y}$}{
+            Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
+            Compute $\mathbf{g}_{\mathbf{z},c}$ with \Cref{eq:gz}\;
+            Compute $\Tilde{\mathbf{g}}_{\mathbf{z},c}^k$ with \Cref{eq:ChannelRSCavg} \tcp*[r]{$\featurega$ has shape $\mathbb{R}^{1 \times 1 \times K}$}
+            Compute $\mathbf{M}_c$ with \Cref{eq:Map} \tcp*[r]{$\mathbf{M}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$}
+            Compute $\mathbf{m}_{c,i,j}$ with \Cref{eq:MaskMap} \;
+            Repeat mask along channels \tcp*[r]{Afterwards $\mathbf{m}$ has shape $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K}$}
+            Adapt $\mathbf{m}_{c,i,j}$ with \Cref{eq:MaskingReversion} \;
+            Compute $\Tilde{\mathbf{z}}$ with \Cref{eq:mutate} \;
+            Backpropagate loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ \;
+            }
     }
-}
-\caption{Self-Challenging Class Activation Maps (\scam)}
+\caption{\scam}
 \label{alg:ActivationMasking}
 \end{algorithm}
-
-Intuitively, constantly applying this masking for all samples within each batch disregards important features and results in relatively poor performance as the network isn't able to learn discriminant features in the first place. Therefore, applying the mask only for certain samples within each batch as mentioned by \citet[Secton~3.3]{huang2020selfchallenging} should yield a better performance. For convenience, we call this process \emph{mask batching}. On top of that, one could schedule the mask batching with an increasing factor (\eg linear schedule) such that masking gets applied more in the later training epochs where discriminant features have been learned. Unfortunately, \citet{huang2020selfchallenging} don't provide an ablation study for different mask batching procedures, only for certain percentiles, and their implementation doesn't schedule them. As a result, there is no intuition available on the performance effects for \rsc which could carry over to \scam. For our full ablation study on these \scam variants, please see \Cref{sec:ablation_study_batching}.
-
-\subsection{Focusing on the right features}
-Both, \citet{sun2020fixing} and \citet{Bae2020RethinkingCAM} propose methods to improve the performance of ordinary CAMs and focus them better on the relevant aspects of an image. We apply some of their approaches to boost the performance of Grad-CAMs and as a result focus the masking of features. 
-
-\subsubsection{Global Average Pooling bias for small activation areas}
-According to \citet{Bae2020RethinkingCAM}, the first problem of traditional class activation maps is that the activated areas for each feature map differ by channel because they capture different class information which isn't properly reflected in the global average pooling operation. Since every channel is globally averaged, smaller feature activation areas result in smaller globally averaged values despite a similar maximum activation value. This doesn't necessarily mean that one of the features is more relevant for the prediction though. To combat the smaller value for the prediction, the weight $w_{k,c}$ corresponding to the smaller value, is often trained to be higher when comparing the two \citep{Bae2020RethinkingCAM}. Instead of the global average pooling operation, they propose \emph{threshold average pooling} (TAP). When adapting their approach for our notation, we receive \Cref{eq:tap} where $\tau_{t a p} = \theta_{tap} \cdot \mathtt{max}(\mathbf{z}^k)$ with $\theta_{tap} \in [0,1)$ as a hyperparameter and $p^k_{tap}$ denotes the scalar from the $k$-th channel of $\mathbf{p}_{tap}$ as it is a $k$-dimensional vector. 
-\begin{equation}
-\label{eq:tap}
-p^k_{tap} =\frac{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\mathbf{z}^k_{i,j} > \tau_{t a p}\right) \mathbf{z}^k_{i,j}}{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\mathbf{z}^k_{i,j} > \tau_{t a p}\right)}
-\end{equation}
-When incorporating this into out method, this results in changing the global average pooling after the last convolutional layer in the ResNet architecture to a threshold average pooling. Generally, this plug-in replacement can be seen as a trade-off between \emph{global max pooling} which is better at identifying the important activations of each channel and \emph{global average pooling} which has the advantage that it expands the activation to broader regions, allowing the loss to backpropagate.
 
 \subsubsection{Smoothing negative Class Activation Maps}
 Based on the analysis of \citet{sun2020fixing}, negative class activation maps, \ie the class activation maps for classes other than the ground truth, often have false activations even when they are not present in an image. To solve this localization error, they propose a loss function which adds a weighted \emph{homogeneous negative CAM} (HNC) loss term to the existing Cross-Entropy loss. This is shown in \Cref{eq:hnc} where $\lambda$ controls the weight of the additional loss term. 
 \begin{equation}
 \label{eq:hnc}
-\mathcal{L}_{c l}(\mathbf{y}, \mathbf{\hat{y}}, \boldsymbol{M})=\mathcal{L}_{ce}(\mathbf{y}, \mathbf{\hat{y}})+\lambda \mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})
+\mathcal{L}_{c l} =\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))+\lambda \mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})
 \end{equation}
 \citet{sun2020fixing} propose two approaches for implementing $\mathcal{L}_{hnc}$ in their work, both operating on the Top-$k$ most confident negative classes. The first one is based on the mean squared error which suppresses peak responses in the CAMs while the second one utilizes the Kullback–Leibler (KL) divergence trying to minimize the difference between negative CAMs and an uniform map. Since they report similar performance for these variants and the KL loss applies a comparably smoother penalty, we use the KL divergence for our method based on the definition shown in \Cref{eq:hnc-kl}.
 \begin{equation}
@@ -88,10 +110,13 @@ To speed up the training for tasks with a large number of classes, we approximat
 \label{eq:hnc-kl-grad-cam-approx}
     \widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})= -\frac{1}{H_\mathbf{z} W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \log \left( \sigma \left(\mathtt{max}\left(0,\sum_{k=1}^K\left(\frac{1}{H_\mathbf{z}W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \frac{\partial \sum_{c \in J^{\prime}_>} y_c}{\partial \mathbf{z}_{i,j}^k}\right)^k \mathbf{z}^k\right)\right)\right)
 \end{equation}
-To finally implement this into \scam, we simply substitute the current loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ in line $12$ from \Cref{alg:ActivationMasking} with \Cref{eq:hnc} where $\hat{\mathbf{y}} = w(\Tilde{\mathbf{z}})$ and $\mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})$ is implemented through our approximation $\widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})$ given in \Cref{eq:hnc-kl-grad-cam-approx}. 
+To finally implement this into \scam, we simply substitute the current loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ in line $12$ from \Cref{alg:ActivationMasking} with \Cref{eq:hnc} where $\mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})$ is implemented through our approximation $\widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})$ given in \Cref{eq:hnc-kl-grad-cam-approx}. 
 
 \subsection{Beyond thresholding with domain agnosticism}
 Next, we can try to utilize more domain information in \scam by aligning distributions of class activation maps produced by the same class across domains. Intuitively, we want their distributions to align as close as possible such that we cannot identify which domain procuded which class activation map. For that, we can utilize some methods previously introduced in \Cref{sec:invariant_features}, in particular a simple method is using maximum mean discrepancy introduced in \Cref{eq:mmd} and adapting it for domain generalization with self-challenging class activation maps.
+
+\subsubsection{Conditional Domain Adversarial Neural Networks}
+TODO
 
 \subsubsection{Maximum Mean Discrepancy with semantic alignment}
 Given two class activation maps for the same class $\mathbf{M}^1_c$ and $\mathbf{M}^2_c$ produced by two domains $\mathcal{D}^1$ and $\mathcal{D}^2$ with samples drawn from individual, unknown distribution $P$ and $Q$, the maximum mean discrepancy (MMD) is given by \Cref{eq:mmd_maps} where $\varphi: \mathbb{R}^{d} \rightarrow \mathcal{H}$ is a feature map and $k(\cdot, \cdot)$ is the kernel function induced by $\varphi(\cdot)$. We consider every distinct pair of source domains $(u,v)$, representing training domains $\mathcal{D}^u$ and $\mathcal{D}^v$, with $u\neq v$ to be in the set $\Gamma$.
@@ -110,126 +135,220 @@ In simpler terms, we map class activation map instances to a reproducing kernel 
     \mathcal{L}_{CCSA} =\sum_{u,v \in \Gamma}\sum_{c_1,c_2 \in \Psi} + \mathcal{L}_{MMD}
 \end{equation}
 
-\subsubsection{Deep Correlation Alignment}
-Deep CORrelation ALignment (CORAL) \citep{SunS16}
-
-\subsubsection{Conditional Domain Adversarial Neural Networks}
 
 \section{Experiments}
-\subsection{Preliminaries}
-\subsection{Domain Generalization Framework: DomainBed}
-\subsection{Tested Datasets}
-\subsection{Hyperparameter Distributions}
-\label{sec:ex_distributions}
-\subsection{Schedules}
-\label{sec:ex_schedules}
-LR schedule + batch schedule
+In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed as well as \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.
+
+\paragraph{Datasets and splits}
+Since the size of the validation dataset can have a heavy impact on performance, we follow the design choices of \domainbed and choose $20\%$ of each domain as the validation size for all experiments and ablation studies. Here, we present results for VLCS \citep{FangXR13}, PACS \citep{LiYSH17}, Office-Home \citep{VenkateswaraECP17}, Terra Incognita \citep{BeeryHP18}, and DomainNet \citep{PengBXHSW19}. Although sometimes disregarded in the body of literature for domain generalization, we provide results for three different dataset splits to assess the stability regarding the model selection and avoid overfitting on one split. 
+
+\subsection{Hyperparameter Distributions \& Schedules}
+\label{sec:abl-distr}
+For the mask batching ablation study we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask-batching}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is always scheduled with a step-decay which decays the learning rate by factor $0.1$ at epoch $80/100$.
+\begin{table}[!htbp]
+    \centering
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Hyperparameter} & \textbf{Distribution} \\
+        \midrule
+        learning rate & $\loguni{-5}{-1}$ \\
+        batch size  & $\floor{\logunitwo{3}{9}}$ \\
+        weight decay  & $\loguni{-6}{-2}$ \\
+        feature drop factor  & $1/3$ \\
+        batch drop factor  & $\uni{0}{1}$ \\
+         \bottomrule 
+    \end{tabular}
+    \caption[Hyperparameters and distributions used for the mask batching ablation study]{Hyperparameters and distributions used in random search for the mask batching ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor{\cdot}$ is the floor operator.}
+    \label{tab:abl-distributions-mask-batching}
+\end{table}
+
+For the mask ablation study, we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is \emph{not} scheduled. This corresponds to the tuning distributions provided in \domainbed which are also used for all the main results.
+\begin{table}[!htbp]
+\small
+    \centering
+    \begin{tabular}{ll}
+        \toprule
+        \textbf{Hyperparameter} & \textbf{Distribution} \\
+        \midrule
+        learning rate & $\loguni{-5}{-3.5}$ \\
+        batch size  & $\floor{\logunitwo{3}{5.5}}$ \\
+        weight decay  & $\loguni{-6}{-2}$ \\
+        feature drop factor  & $\uni{0.2}{0.5}$ \\
+        batch drop factor  & $\uni{0}{1}$ \\
+        hnc factor & $\loguni{-3}{-1}$ \\
+        top k negative & $\mathrm{num\_classes} - 1$ \\
+        tap factor & $\uni{0}{1}$ \\
+        lambda & $\loguni{-2}{2}$ \\
+        disc per gen step & $\floor{\logunitwo{0}{3}}$ \\
+        grad penalty & $\loguni{-2}{1}$ \\
+        mlp width & $512$ \\
+        mlp depth & $3$ \\
+        mlp dropout & $0.5$ \\
+        \bottomrule 
+    \end{tabular}
+    \caption[Hyperparameters and distributions used for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$, $\floor{\cdot}$ is the floor operator, and $[\cdot]$ represents a choice.}
+    \label{tab:abl-distributions-mask}
+\end{table}
 
 \section{Results}
+
+\begin{table*}[t]
+\small
+\centering
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Algorithm}  & \textbf{Ref.}       & \textbf{VLCS}             & \textbf{PACS}             & \textbf{Office-Home}       & \textbf{Terra Incognita}   & \textbf{DomainNet}        & \textbf{Avg.}              \\
+\midrule
+ERM                       & \citep{vapnik1998statistical}            & 77.5 $\pm$ 0.4            & 85.5 $\pm$ 0.2            & 66.5 $\pm$ 0.3            & 46.1 $\pm$ 1.8            & 40.9 $\pm$ 0.1            & 63.3                     \\
+IRM                       & \citep{arjovsky2019invariant}             & 78.5 $\pm$ 0.5            & 83.5 $\pm$ 0.8            & 64.3 $\pm$ 2.2            & 47.6 $\pm$ 0.8            & 33.9 $\pm$ 2.8            & 61.5                      \\
+GroupDRO                  & \citep{sagawa2019distributionally}        & 76.7 $\pm$ 0.6            & 84.4 $\pm$ 0.8            & 66.0 $\pm$ 0.7            & 43.2 $\pm$ 1.1            & 33.3 $\pm$ 0.2            & 60.7                      \\
+Mixup                     & \citep{yan2020improve}            & 77.4 $\pm$ 0.6            & 84.6 $\pm$ 0.6            & 68.1 $\pm$ 0.3            & 47.9 $\pm$ 0.8            & 39.2 $\pm$ 0.1            & 63.4                      \\
+MLDG                      & \citep{LiYSH18}            & 77.2 $\pm$ 0.4            & 84.9 $\pm$ 1.0            & 66.8 $\pm$ 0.6            & 47.7 $\pm$ 0.9            & 41.2 $\pm$ 0.1            & 63.5                      \\
+CORAL                     &  \citep{SunS16}             & 78.8 $\pm$ 0.6            & 86.2 $\pm$ 0.3            & 68.7 $\pm$ 0.3            & 47.6 $\pm$ 1.0            & 41.5 $\pm$ 0.1            & 64.5                      \\
+MMD                       & \citep{LiPWK18}           & 77.5 $\pm$ 0.9            & 84.6 $\pm$ 0.5            & 66.3 $\pm$ 0.1            & 42.2 $\pm$ 1.6            & 23.4 $\pm$ 9.5            & 58.8                      \\
+DANN                      & \citep{GaninUAGLLML16}         & 78.6 $\pm$ 0.4            & 83.6 $\pm$ 0.4            & 65.9 $\pm$ 0.6            & 46.7 $\pm$ 0.5            & 38.3 $\pm$ 0.1            & 62.6                      \\
+CDANN                     & \citep{LiGTLT18}          & 77.5 $\pm$ 0.1            & 82.6 $\pm$ 0.9            & 65.8 $\pm$ 1.3            & 45.8 $\pm$ 1.6            & 38.3 $\pm$ 0.3            & 62.0                      \\
+MTL                       & \citep{blanchard2017domain}           & 77.2 $\pm$ 0.4            & 84.6 $\pm$ 0.5            & 66.4 $\pm$ 0.5            & 45.6 $\pm$ 1.2            & 40.6 $\pm$ 0.1            & 62.8                      \\
+SagNet                    & \citep{nam2019reducing}             & 77.8 $\pm$ 0.5            & 86.3 $\pm$ 0.2            & 68.1 $\pm$ 0.1            & 48.6 $\pm$ 1.0            & 40.3 $\pm$ 0.1            & 64.2                      \\
+ARM                       & \citep{zhang2020adaptive}           & 77.6 $\pm$ 0.3            & 85.1 $\pm$ 0.4            & 64.8 $\pm$ 0.3            & 45.5 $\pm$ 0.3            & 35.5 $\pm$ 0.2            & 61.7                      \\
+VREx                      & \citep{krueger2020outofdistribution}            & 78.3 $\pm$ 0.2            & 84.9 $\pm$ 0.6            & 66.4 $\pm$ 0.6            & 46.4 $\pm$ 0.6            & 33.6 $\pm$ 2.9            & 61.9                      \\
+RSC  		& \citep{huang2020selfchallenging}	      & 77.1 $\pm$ 0.5            & 85.2 $\pm$ 0.9            & 65.5 $\pm$ 0.9             & 46.6 $\pm$ 1.0           & 38.9 $\pm$ 0.5             & 62.7                      \\
+\divcams               & (ours)            &77.8 $\pm$ 0.3            & 85.4 $\pm$ 0.2             & 65.2 $\pm$ 0.3           & 48.0 $\pm$ 1.2             & 40.7  $\pm$ 0.0    & 63.4                    \\
+\midrule
+ERM*           &   \citep{vapnik1998statistical}               	  & 77.6 $\pm$ 0.3            & 86.7 $\pm$ 0.3            & 66.4 $\pm$ 0.5            & 53.0 $\pm$ 0.3            & 41.3 $\pm$ 0.1            & 65.0                      \\
+IRM*             &    \citep{arjovsky2019invariant}             	  & 76.9 $\pm$ 0.6            & 84.5 $\pm$ 1.1            & 63.0 $\pm$ 2.7            & 50.5 $\pm$ 0.7            & 28.0 $\pm$ 5.1            & 60.5                      \\
+GroupDRO*      &   \citep{sagawa2019distributionally}                    & 77.4 $\pm$ 0.5            & 87.1 $\pm$ 0.1            & 66.2 $\pm$ 0.6            & 52.4 $\pm$ 0.1            & 33.4 $\pm$ 0.3            & 63.3                      \\
+Mixup*               &   \citep{yan2020improve}            		 & 78.1 $\pm$ 0.3            & 86.8 $\pm$ 0.3            & 68.0 $\pm$ 0.2            & 54.4 $\pm$ 0.3            & 39.6 $\pm$ 0.1            & 65.3                      \\
+MLDG*                 &  \citep{LiYSH18}           				& 77.5 $\pm$ 0.1            & 86.8 $\pm$ 0.4            & 66.6 $\pm$ 0.3            & 52.0 $\pm$ 0.1            & 41.6 $\pm$ 0.1            & 64.9                      \\
+CORAL*                &  \citep{SunS16}           			  & 77.7 $\pm$ 0.2            & 87.1 $\pm$ 0.5            & 68.4 $\pm$ 0.2            & 52.8 $\pm$ 0.2            & 41.8 $\pm$ 0.1            & 65.5                      \\
+MMD*               &   \citep{LiPWK18}               			& 77.9 $\pm$ 0.1            & 87.2 $\pm$ 0.1            & 66.2 $\pm$ 0.3            & 52.0 $\pm$ 0.4            & 23.5 $\pm$ 9.4            & 61.3                      \\
+DANN*              &  \citep{GaninUAGLLML16}              		& 79.7 $\pm$ 0.5            & 85.2 $\pm$ 0.2            & 65.3 $\pm$ 0.8            & 50.6 $\pm$ 0.4            & 38.3 $\pm$ 0.1            & 63.8                      \\
+CDANN*            &  \citep{LiGTLT18}              			& 79.9 $\pm$ 0.2            & 85.8 $\pm$ 0.8            & 65.3 $\pm$ 0.5            & 50.8 $\pm$ 0.6            & 38.5 $\pm$ 0.2            & 64.0                      \\
+MTL*                  &  \citep{blanchard2017domain}           	  & 77.7 $\pm$ 0.5            & 86.7 $\pm$ 0.2            & 66.5 $\pm$ 0.4            & 52.2 $\pm$ 0.4            & 40.8 $\pm$ 0.1            & 64.7                      \\
+SagNet*             &   \citep{nam2019reducing}           	& 77.6 $\pm$ 0.1            & 86.4 $\pm$ 0.4            & 67.5 $\pm$ 0.2            & 52.5 $\pm$ 0.4            & 40.8 $\pm$ 0.2            & 64.9                      \\
+ARM*                  &   \citep{zhang2020adaptive}           		& 77.8 $\pm$ 0.3            & 85.8 $\pm$ 0.2            & 64.8 $\pm$ 0.4            & 51.2 $\pm$ 0.5            & 36.0 $\pm$ 0.2            & 63.1                      \\
+VREx*                 &    \citep{krueger2020outofdistribution}       	  & 78.1 $\pm$ 0.2            & 87.2 $\pm$ 0.6            & 65.7 $\pm$ 0.3            & 51.4 $\pm$ 0.5            & 30.1 $\pm$ 3.7            & 62.5                      \\
+RSC*  		& \citep{huang2020selfchallenging}	      & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0             & 00.0 $\pm$ 0.0           & 00.0 $\pm$ 0.0             & 00.0                      \\
+\tdivcams              & (ours) & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0             & 00.0 $\pm$ 0.0           & 00.0 $\pm$ 0.0             & 00.0                      \\
+
+\bottomrule
+\end{tabular}
+\caption[Performance comparison across datasets]{Performance comparison across datasets using training-domain validation (top) and  oracle validation denoted with * (bottom). We use a ResNet-50 backbone, optimize with \adam, and follow the distributions specified in \domainbed.}
+    \label{tab:perfom}
+\end{table*}
+
+\begin{table*}
+\small
+\centering
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Algorithm} & \textbf{Ref.} & \textbf{Backbone} & \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} &  \textbf{Avg.} \\
+\midrule
+\textsc{Baseline}		&\cite{CarlucciDBCT19}				&	ResNet-18	&	$95.73$		&	$77.85$		&	$74.86$		&	$67.74$		&	$79.05$		 \\
+\textsc{MASF}		&\cite{DouCKG19}					&	ResNet-18	&	$94.99$		&	$80.29$		&	$77.17$		&	$71.69$		&	$81.03$		 \\
+\textsc{Epi-FCR}		&\cite{LiZYLSH19}					&	ResNet-18	&	$93.90$		&	$82.10$		&	$77.00$		&	$73.00$		&	$81.50$		 \\
+\textsc{JiGen}		&\cite{CarlucciDBCT19}				&	ResNet-18	&	$96.03$		&	$79.42$		&	$75.25$		&	$71.35$		&	$80.51$		\\
+\textsc{MetaReg}		& \cite{BalajiSC18}					&	ResNet-18	&	$95.50$		&	$83.70$		&	$77.20$		&	$70.30$		&	$81.70$		\\
+\textsc{RSC} (reported)	& \cite{huang2020selfchallenging}		&	ResNet-18	&	$95.99$		&	$83.43$		&	$80.31$		&	$80.85$		&	$85.15$		\\
+\textsc{RSC} (reproduced) & \cite{huang2020selfchallenging}		&	ResNet-18	&	$93.73$		&	$80.41$		&	$77.53$		&	$80.79$		&	$83.12$		\\
+\divcams			&     (ours)						&	ResNet-18	&	$96.11$		&	$80.27$		&	$77.82$		&	$82.18$		&	$84.10$		\\
+\bottomrule
+\end{tabular}
+\caption[Performance comparison for official PACS splits outside of \domainbed]{Performance comparison for PACS outside of the \domainbed framework with the official data split.}
+\end{table*}
+
+
 
 \section{Ablation Study}
 
 \subsection{Mask Batching}
 \label{sec:ablation_study_batching}
 
-\begin{table}[!htbp]
+There exist several methods how we can compute the vector $\mathbf{c}$ in our method and hence determine how we should apply the masks within each batch. Here, we analyze the effect on performance for a few possible choices. By default, \divcam uses \Cref{eq:conf_scamb} where $y_{gt}$ is the confidence on the ground truth class after softmax. This applies the masks on samples with the highest confidence on the correct class within each batch.   
+\begin{equation}
+\label{eq:conf_scamb}
+	\mathbf{c}^n = y_{gt}
+\end{equation}
+Another option is \divcamc with \Cref{eq:conf_scamc} which computes the change in confidence on the ground truth class when applying the mask. The masked confidence after softmax is denoted as $\tilde{y}_{gt}$. This variation applies the masks for samples where the mask decreases confidence on the ground truth class the most.
+\begin{equation}
+\label{eq:conf_scamc}
+   \mathbf{c}^n = y_{gt} - \tilde{y}_{gt}
+\end{equation}
+The last variation is \divcamt where we apply the masks randomly for samples which are correctly classified. All variants can further be extended by adding a linear schedule, denoted with an additional ``S'', or computing $\mathbf{c}$ for each domain separately, denoted with an additional ``D''. By adding a schedule, we apply masks more in the later training epochs where discriminant features have been learned and by enforcing it for each domain we can ensure that the masks aren't applied biased towards a subset of domains and disregarded for others. \Cref{tab:scam_batching} shows experiments for these variants.
+
+
+\begin{table*}[t]
 \small
 %\renewcommand{\arraystretch}{1.2}
     \centering
-    \begin{tabular}{lccccccr}
+    \begin{tabular}{lccccc}
     \toprule
-    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} &  \textbf{Avg.} & \textbf{Batch} & \textbf{Feature}\\
+    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} &  \textbf{Avg.} \\
     \midrule
-    \scam & $84.4\pm1.1$ & $74.2\pm2.3$ & $72.8\pm1.7$ & $63.0\pm6.8$ & $73.6\pm2.2$ & & $0.\overline{33}$ \\
-    \scamb & $94.0\pm0.4$ & $80.6\pm1.2$ & $75.4\pm0.7$ & $76.7\pm0.7$ & $81.7\pm0.6$  & & $0.\overline{33}$\\
-    \scambs & $94.4\pm0.7$ & $80.5\pm0.4$ & $74.6\pm2.2$ & $\tabtop{79.0\pm0.9}$ & $\tabtop{82.1\pm0.3}$  & & $0.\overline{33}$ \\
-    \scamdb & $94.3\pm0.1$ & $80.1\pm0.1$ & $74.5\pm0.9$ & $76.6\pm1.7$ & $81.4\pm0.2$  & & $0.\overline{33}$ \\
-    \scamdbs & $93.9\pm0.2$ & $80.4\pm0.4$ & $73.4\pm2.2$ & $74.8\pm1.2$ & $80.6\pm0.9$  & & $0.\overline{33}$ \\
-    \scamc & $92.6\pm0.4$ & $80.1\pm1.1$ & $73.6\pm1.4$ & $75.0\pm1.2$ & $80.3\pm0.9$  & & $0.\overline{33}$ \\
-    \scamcs & $95.0\pm0.6$ & $79.9\pm1.0$ & $74.5\pm0.7$ & $78.1\pm0.8$ & $81.9\pm0.4$  & & $0.\overline{33}$ \\
-    \scamdc & $\tabtop{95.1\pm0.4}$ & $79.5\pm1.0$ & $73.7\pm0.9$ & $75.2\pm1.2$ & $80.9\pm0.4$ & & $0.\overline{33}$ \\
-    \scamdcs & $93.5\pm0.1$ & $80.1\pm0.2$ & $75.1\pm0.1$ & $77.2\pm1.6$ & $81.5\pm0.5$ & & $0.\overline{33}$ \\
-    \scamt & $95.0\pm0.3$ & $80.3\pm0.3$ & $74.8\pm0.8$ & $75.3\pm1.1$ & $81.4\pm0.4$ & & $0.\overline{33}$ \\
-    \scamts & $95.0\pm0.1$ & $79.9\pm0.8$ & $72.6\pm1.3$ & $77.1\pm1.4$ & $81.2 \pm 0.4$ & & $0.\overline{33}$ \\
-    \scamdt & $94.8\pm0.6$ & $79.6\pm0.6$ & $74.0\pm1.1$ & $78.5\pm0.4$ & $81.7\pm0.1$ & & $0.\overline{33}$ \\
-    \scamdts & $95.1\pm0.2$ & $\tabtop{81.5\pm1.3}$ & $\tabtop{75.5\pm0.4}$ & $74.9\pm2.0$ &  $81.7\pm0.5$ & & $0.\overline{33}$ \\
+    %\scam & $84.4\pm1.1$ & $74.2\pm2.3$ & $72.8\pm1.7$ & $63.0\pm6.8$ & $73.6\pm2.2$  \\
+    \divcam & $94.0\pm0.4$ & $80.6\pm1.2$ & $75.4\pm0.7$ & $76.7\pm0.7$ & $81.7\pm0.6$ \\
+    \divcams & $94.4\pm0.7$ & $80.5\pm0.4$ & $74.6\pm2.2$ & $\tabtop{79.0\pm0.9}$ & $\tabtop{82.1\pm0.3}$   \\
+    \divcamd & $94.3\pm0.1$ & $80.1\pm0.1$ & $74.5\pm0.9$ & $76.6\pm1.7$ & $81.4\pm0.2$   \\
+    \divcamds & $93.9\pm0.2$ & $80.4\pm0.4$ & $73.4\pm2.2$ & $74.8\pm1.2$ & $80.6\pm0.9$   \\
+    \divcamc & $92.6\pm0.4$ & $80.1\pm1.1$ & $73.6\pm1.4$ & $75.0\pm1.2$ & $80.3\pm0.9$  \\
+    \divcamcs & $95.0\pm0.6$ & $79.9\pm1.0$ & $74.5\pm0.7$ & $78.1\pm0.8$ & $81.9\pm0.4$   \\
+    \divcamdc & $\tabtop{95.1\pm0.4}$ & $79.5\pm1.0$ & $73.7\pm0.9$ & $75.2\pm1.2$ & $80.9\pm0.4$ \\
+    \divcamdcs & $93.5\pm0.1$ & $80.1\pm0.2$ & $75.1\pm0.1$ & $77.2\pm1.6$ & $81.5\pm0.5$  \\
+    \divcamt & $95.0\pm0.3$ & $80.3\pm0.3$ & $74.8\pm0.8$ & $75.3\pm1.1$ & $81.4\pm0.4$  \\
+    \divcamts & $95.0\pm0.1$ & $79.9\pm0.8$ & $72.6\pm1.3$ & $77.1\pm1.4$ & $81.2 \pm 0.4$  \\
+    \divcamdt & $94.8\pm0.6$ & $79.6\pm0.6$ & $74.0\pm1.1$ & $78.5\pm0.4$ & $81.7\pm0.1$  \\
+    \divcamdts & $95.1\pm0.2$ & $\tabtop{81.5\pm1.3}$ & $\tabtop{75.5\pm0.4}$ & $74.9\pm2.0$ &  $81.7\pm0.5$  \\
     \midrule
-    \tscam & $84.1\pm0.7$ & $72.9\pm2.7$ & $73.9\pm1.1$ & $68.2\pm4.3$ & $74.8\pm1.3$  & & $0.\overline{33}$ \\
-    \tscamb & $\tabtop{94.9\pm0.7}$ & $81.5\pm0.7$ & $76.6\pm0.4$ & $\tabtop{80.5\pm0.7}$ & $83.4\pm0.3$  & & $0.\overline{33}$ \\
-    \tscambs & $94.9\pm0.3$ & $\tabtop{82.7\pm0.7}$ & $76.3\pm0.7$ & $80.1\pm0.4$ & $83.5\pm0.3$  & & $0.\overline{33}$ \\
-    \tscamdb & $94.8\pm0.2$ & $81.0\pm0.7$ & $\tabtop{77.6\pm0.6}$ & $79.9\pm0.6$ &  $83.3\pm0.3$ & & $0.\overline{33}$ \\
-    \tscamdbs & $94.6\pm0.5$ & $80.7\pm0.3$ & $77.0\pm0.4$ & $79.3\pm0.3$ & $82.9\pm0.1$  & & $0.\overline{33}$ \\
-    \tscamc & $94.7\pm0.5$ & $82.6\pm0.6$ & $77.0\pm0.5$ & $80.1\pm1.0$ & $\tabtop{83.6\pm0.3}$  & & $0.\overline{33}$ \\
-    \tscamcs & $94.2\pm0.2$ & $82.5\pm0.8$ & $76.9\pm0.3$ & $79.9\pm0.7$ & $83.4\pm0.3$ & & $0.\overline{33}$ \\
-    \tscamdc & $94.8\pm0.4$ & $82.0\pm0.4$ & $76.6\pm0.9$ & $80.1\pm0.4$ & $83.4\pm0.1$ & & $0.\overline{33}$ \\
-    \tscamdcs & $94.7\pm0.4$ & $81.0\pm0.3$ & $77.6\pm0.2$ & $80.3\pm1.3$ & $83.4\pm0.3$ & & $0.\overline{33}$ \\
-    \tscamt & $94.5\pm0.4$ & $81.6\pm0.8$ & $76.7\pm0.2$ & $79.6\pm0.4$ & $83.1\pm0.4$ & & $0.\overline{33}$ \\
-    \tscamts & $94.8\pm0.3$ & $81.3\pm0.2$ & $76.7\pm0.5$ & $79.7\pm0.5$  & $83.2 \pm 0.2$ & & $0.\overline{33}$ \\
-    \tscamdt & $94.7\pm0.5$ & $80.9\pm1.1$ & $77.3\pm0.5$ & $79.9\pm0.6$ & $83.2\pm0.2$ & & $0.\overline{33}$ \\
-    \tscamdts & $94.7\pm0.5$ & $82.1\pm1.0$ & $76.4\pm0.6$ & $79.5\pm1.2$ & $83.2\pm0.1$ & & $0.\overline{33}$ \\
+    %\tscam & $84.1\pm0.7$ & $72.9\pm2.7$ & $73.9\pm1.1$ & $68.2\pm4.3$ & $74.8\pm1.3$   \\
+    \tdivcam & $\tabtop{94.9\pm0.7}$ & $81.5\pm0.7$ & $76.6\pm0.4$ & $\tabtop{80.5\pm0.7}$ & $83.4\pm0.3$  \\
+    \tdivcams & $94.9\pm0.3$ & $\tabtop{82.7\pm0.7}$ & $76.3\pm0.7$ & $80.1\pm0.4$ & $83.5\pm0.3$   \\
+    \tdivcamd & $94.8\pm0.2$ & $81.0\pm0.7$ & $\tabtop{77.6\pm0.6}$ & $79.9\pm0.6$ &  $83.3\pm0.3$  \\
+    \tdivcamds & $94.6\pm0.5$ & $80.7\pm0.3$ & $77.0\pm0.4$ & $79.3\pm0.3$ & $82.9\pm0.1$   \\
+    \tdivcamc & $94.7\pm0.5$ & $82.6\pm0.6$ & $77.0\pm0.5$ & $80.1\pm1.0$ & $\tabtop{83.6\pm0.3}$  \\
+    \tdivcamcs & $94.2\pm0.2$ & $82.5\pm0.8$ & $76.9\pm0.3$ & $79.9\pm0.7$ & $83.4\pm0.3$  \\
+    \tdivcamdc & $94.8\pm0.4$ & $82.0\pm0.4$ & $76.6\pm0.9$ & $80.1\pm0.4$ & $83.4\pm0.1$  \\
+    \tdivcamdcs & $94.7\pm0.4$ & $81.0\pm0.3$ & $77.6\pm0.2$ & $80.3\pm1.3$ & $83.4\pm0.3$ \\
+    \tdivcamt & $94.5\pm0.4$ & $81.6\pm0.8$ & $76.7\pm0.2$ & $79.6\pm0.4$ & $83.1\pm0.4$ \\
+    \tdivcamts & $94.8\pm0.3$ & $81.3\pm0.2$ & $76.7\pm0.5$ & $79.7\pm0.5$  & $83.2 \pm 0.2$  \\
+    \tdivcamdt & $94.7\pm0.5$ & $80.9\pm1.1$ & $77.3\pm0.5$ & $79.9\pm0.6$ & $83.2\pm0.2$ \\
+    \tdivcamdts & $94.7\pm0.5$ & $82.1\pm1.0$ & $76.4\pm0.6$ & $79.5\pm1.2$ & $83.2\pm0.1$  \\
     \bottomrule
     \end{tabular}
-    \caption[Ablation study for the \scam mask batching on the PACS dataset]{Ablation study for the \scam mask batching on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-18 backbone, the schedules from \Cref{sec:abl-distr}, $25$ hyperparameter samples with distributions from \Cref{sec:abl-distr}, and $3$ split seeds for standard deviations. The ``Batch'' column shows the chosen hyperparameter factors based on the respective validation technique, ``Feature'' is kept constant.}
+    \caption[Ablation study for the \divcam mask batching on the PACS dataset]{Ablation study for the \divcam mask batching on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-18 backbone, schedules and distributions from \Cref{sec:abl-distr}, $25$ hyperparameter samples, and $3$ split seeds for standard deviations.}
     \label{tab:scam_batching}
-\end{table}
+\end{table*}
+
+We observe that adding a schedule helps in most cases, achieving the highest training domain validation performance for \divcams.  Enforcing the application of masks within each domain, however, doesn't consistently improve performance and therefore we don't consider it for the final method.
 
 \subsection{Masks}
 
-% \begin{table}[!htbp]
-% \small
-% %\renewcommand{\arraystretch}{1.2}
-%     \centering
-%     \begin{tabular}{lccccccr}
-%     \toprule
-%     \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} & \textbf{Avg.} & \textbf{Batch} & \textbf{Feature} \\
-%     \midrule
-%     \scamb & $93.6 \pm 0$ & $78.9\pm0$ & $\tabtop{74.9\pm0}$ & $74.5\pm0$ & $80.5\pm0$ & & $0.\overline{33}$ \\
-%     \scamb + TAP & $\tabtop{95.3\pm0}$ & $77.7\pm0$ & $72.5\pm0$ & $\tabtop{77.2\pm0}$ & $\tabtop{80.7\pm0}$ & & $0.\overline{33}$ \\
-%     \scamb + HNC & $93.9\pm0$ & $77.6\pm0$ & $69.3\pm0$ & $71.6\pm0$ & $78.1\pm0$ & & $0.\overline{33}$ \\
-%     \scamb + TAP + HNC & $94.0\pm0$ & $\tabtop{82.2\pm0}$ & $71.6\pm0$ & $69.4\pm0$ & $79.3\pm0$ & & $0.\overline{33}$ \\
-%     \midrule
-%     \tscamb & $94.9\pm0$ & $82.4\pm0$ & $77.3\pm0$ & $78.5\pm0$ & $83.3\pm0$ & & $0.\overline{33}$ \\
-%     \scamb + TAP* & $\tabtop{95.1\pm0}$ & $\tabtop{84.4\pm0}$ & $76.9\pm0$ & $\tabtop{79.0\pm0}$ & $\tabtop{83.8\pm0}$ & & $0.\overline{33}$  \\
-%     \scamb + HNC*  & $94.5\pm0$ & $79.8\pm0$ & $\tabtop{77.7\pm0}$ & $74.6\pm0$ & $81.6\pm0$ & & $0.\overline{33}$ \\
-%     \scamb + TAP + HNC* & $94.2\pm0$ & $78.0\pm0$ & $76.0\pm0$ & $78.1\pm0$ & $81.6\pm0$ & & $0.\overline{33}$ \\
-%     \bottomrule
-%     \end{tabular}
-%     \caption[Ablation study for the \scam masks on the PACS dataset]{Ablation study for the \scam masks on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-18 backbone, the schedules from \Cref{sec:abl-distr}, $50$ hyperparameter samples with distributions from \Cref{sec:abl-distr}, and $1$ split seeds for standard deviations. The ``Batch'' column shows the chosen hyperparameter factor based on the respective validation technique, ``Feature'' is kept constant.}
-%     \label{tab:scam_masks}
-% \end{table}
+We combine our masks with other methods from domain generalization, as well as methods to boost the explainability for class activation maps. 
 
-
-\begin{table}[!htbp]
+\begin{table}[t]
 \small
 %\renewcommand{\arraystretch}{1.2}
     \centering
-    \begin{tabular}{lccccccr}
+    \begin{tabular}{lccccc}
     \toprule
-    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} & \textbf{Avg.} & \textbf{Batch} & \textbf{Feature} \\
+    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} & \textbf{Avg.} \\
+    \midrule 
+    \divcam & $\tabtop{97.6\pm0.4}$ & $85.2\pm0.8$ & $80.5\pm0.7$ & $78.3\pm0.8$ & $\tabtop{85.4\pm0.5}$ \\
+    \divcams & $97.3\pm0.4$ & $86.2\pm1.4$ & $79.1\pm2.2$ & $\tabtop{79.2\pm0.1}$ & $85.4\pm0.2$ \\
+    \divcams + TAP & $96.9\pm0.1$ & $85.1\pm1.5$ & $78.7\pm0.4$ & $75.3\pm0.6$ & $84.0\pm0.4$ \\
+    \divcams + HNC & $97.2\pm0.3$ & $\tabtop{87.2\pm0.9}$ & $79.2\pm0.6$ & $71.7\pm3.1$ & $83.8\pm0.4$ \\
+    \divcams + CDANN & $97.5\pm0.4$ & $85.2\pm2.8$ & $78.3\pm2.0$ & $74.8\pm0.9$ & $84.0\pm1.5$ \\
+    \divcams + MMD & $97.0\pm0.2$ & $85.4\pm1.0$ & $\tabtop{81.5\pm0.4}$ & $75.8\pm3.5$ & $84.9\pm1.1$ \\
+    CAM + CDANN & $97.2\pm0.3$ & $86.7\pm0.5$ & $77.3\pm1.7$ & $71.5\pm1.3$ & $83.2\pm0.8$ \\
     \midrule
-    \scamb & $93.8 \pm 0.3$ & $79.5 \pm 1.5$ & $73.4 \pm 1.5$ & $73.1 \pm 1.1$ & $79.9 \pm 0.3$ & & $x$ \\
-    \scambs & $94.3 \pm 0.3$ & $\tabtop{81.0 \pm 1.1}$ & $72.7 \pm 0.6$ & $\tabtop{76.3 \pm 1.5}$ & $\tabtop{81.1 \pm 0.4}$ & & $x$ \\
-    \scamb + TAP & $93.9 \pm 0.2$ & $77.4 \pm 1.2$ & $\tabtop{73.9 \pm 0.9}$ & $71.4 \pm 3.0$ & $79.1 \pm 0.7$ & & $x$ \\
-    \scambs + TAP & $93.7 \pm 0.4$ & $78.8 \pm 0.5$ & $73.9 \pm 0.6$ & $72.8 \pm 4.1$ & $79.8 \pm 0.7$ & & $x$ \\
-    \scamb + HNC & $94.0 \pm 0.1$ & $79.6 \pm 0.8$ & $74.2 \pm 1.1$ & $73.6 \pm 1.3$ & $80.3 \pm 0.5$ & & $x$ \\
-    \scamb + TAP + HNC & $94.3 \pm 0.1$ & $79.5 \pm 0.6$ & $72.2 \pm 1.1$ & $74.4 \pm 0.8$ & $80.1 \pm 0.6$ & & $x$\\
-    \scamb + DANN & $\tabtop{94.5 \pm 0.2}$ & $78.0 \pm 2.1$ & $73.8 \pm 1.2$ & $74.5 \pm 0.8$ & $80.2 \pm 0.6$ & & $x$\\
-    \scamb + CDANN & $94.4 \pm 0.3$ & $77.8 \pm 1.3$ & $73.5 \pm 1.0$ & $73.5 \pm 0.2$ & $79.8 \pm 0.7$ & & $x$\\
-    MAP + DANN & $93.7 \pm 0.3$ & $77.6 \pm 2.3$ & $72.5 \pm 0.7$ & $73.8 \pm 1.2$ & $79.4 \pm 0.8$ & & $x$\\
-    MAP + CDANN & $94.2 \pm 0.5$ & $78.2 \pm 1.3$ & $72.6 \pm 2.1$ & $72.4 \pm 0.9$ & $79.4 \pm 0.2$ & & $x$\\
-    \midrule
-    \tscamb & $94.7 \pm 0.3$ & $80.5 \pm 0.5$ & $77.7 \pm 0.9$ & $\tabtop{81.4 \pm 0.4}$ & $\tabtop{83.6 \pm 0.3}$ & & $x$ \\
-    \tscambs & $94.6 \pm 0.8$ & $82.6 \pm 0.3$ & $75.3 \pm 0.5$ & $80.4 \pm 0.7$ & $83.2 \pm 0.4$ & & $x$ \\
-    \scamb + TAP* & $93.8 \pm 0.7$ & $82.1 \pm 1.3$ & $77.3 \pm 0.5$ & $79.0 \pm 0.9$ & $83.1 \pm 0.6$ & & $x$  \\
-    \scambs + TAP* & $\tabtop{95.4 \pm 0.4}$ & $81.1 \pm 0.7$ & $77.3 \pm 0.8$ & $79.5 \pm 0.7$ & $83.3 \pm 0.4$ & & $x$ \\
-    \scamb + HNC*  & $94.5 \pm 0.3$ & $81.6 \pm 1.4$ & $\tabtop{78.2 \pm 0.3}$ & $80.1 \pm 0.7$ & $83.6 \pm 0.1$ & & $x$ \\
-    \scamb + TAP + HNC* & $94.3 \pm 0.2$ & $81.9 \pm 0.8$ & $76.2 \pm 0.7$ & $78.4 \pm 0.6$ & $82.7 \pm 0.2$ & & $x$ \\
-    \scamb + DANN* & $95.1 \pm 0.5$ & $81.2 \pm 0.9$ & $75.0 \pm 0.3$ & $76.6 \pm 0.7$ & $82.0 \pm 0.4$ & & $x$\\
-    \scamb + CDANN* & $94.6 \pm 0.0$ & $81.9 \pm 0.7$ & $75.2 \pm 0.5$ & $77.4 \pm 1.0$ & $82.3 \pm 0.3$ & & $x$\\
-    MAP + DANN* & $94.2 \pm 0.3$ & $81.0 \pm 0.3$ & $76.1 \pm 0.5$ & $77.6 \pm 1.2$ & $82.2 \pm 0.5$ & & $x$\\
-    MAP + CDANN* & $94.1 \pm 0.6$ & $\tabtop{82.7 \pm 1.5}$ & $74.9 \pm 0.5$ & $76.1 \pm 0.6$ & $82.0 \pm 0.6$ & & $x$\\
+    \tdivcam & $96.2\pm1.2$ & $87.0\pm0.5$ & $82.0\pm0.9$ & $80.8\pm0.6$ & $86.5\pm0.1$ \\
+    \tdivcams & $97.2\pm0.3$ & $86.5\pm0.4$ & $83.0\pm0.5$ & $82.2\pm0.1$ & $87.2\pm0.1$ \\
+    \divcams + TAP* & $97.3\pm0.3$ & $87.2\pm0.8$ & $\tabtop{83.2\pm0.8}$ & $\tabtop{82.8\pm0.2}$ & $\tabtop{87.6\pm0.0}$ \\
+    \divcams + HNC*  & $97.3\pm0.2$ & $\tabtop{87.4\pm0.5}$ & $81.4\pm0.6$ & $79.7\pm1.1$ & $86.5\pm0.4$ \\
+    \divcams + CDANN* & $\tabtop{97.3\pm0.5}$ & $85.9\pm1.2$ & $80.6\pm0.4$ & $80.9\pm0.4$ & $86.2\pm0.2$ \\
+    \divcams + MMD* & $\tabtop{97.3\pm0.5}$ & $86.8\pm0.7$ & $83.2\pm0.4$ & $80.9\pm0.7$ & $87.1\pm0.4$ \\
+    CAM + CDANN* & $97.2\pm0.4$ & $86.7\pm0.5$ & $81.9\pm0.2$ & $80.6\pm0.7$ & $86.6\pm0.2$ \\
     \bottomrule
     \end{tabular}
-    \caption[Ablation study for the \scam masks on the PACS dataset]{Ablation study for the \scam masks on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-18 backbone, the schedules from \Cref{sec:abl-distr}, $25$ hyperparameter samples with distributions from \Cref{sec:abl-distr}, and $3$ split seeds for standard deviations.}
+    \caption[Ablation study for the \divcam masks on the PACS dataset]{Ablation study for the \divcam masks on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-50 backbone, schedules and distributions from \Cref{sec:abl-distr}, $20$ hyperparameter samples, and $3$ split seeds for standard deviations. Results are directly integratable in \Cref{tab:perfom} as we use the same tuning protocol provided in \domainbed.}
     \label{tab:scam_masks}
 \end{table}
