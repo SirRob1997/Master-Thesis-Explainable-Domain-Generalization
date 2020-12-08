@@ -1,6 +1,6 @@
 \chapter{Proposed Methods}
 
-\section{Self-Challenging Class Activation Maps}
+\section{Diversified Class Activation Maps (\divcam)}
 \label{sec:divcam}
 
 \begin{figure}[t]
@@ -15,7 +15,7 @@ In \Cref{sec:RSC} we introduce the concept of Representation Self-Challenging fo
 
 Despite the effectiveness of the model, we believe the approach of \citet{huang2020selfchallenging} does not fully exploit the relation between a feature vector and the actual content of the image. We argue (and experimentally demonstrate) that we can directly use CAMs to construct the self-challenging task. In particular, while the raw target gradient models the significance of each channel in each spatial location for the prediction, CAMs allow us to better capture the actual importance of each image region. Thus, performing the targeted masking on highest CAM's values means explicitly excluding the most relevant {region} of the image that where used for the prediction, forcing the model to focus on other (and interpretable) visual cues for the recognizing the object of interests. 
 
-Therefore, as an intuitive baseline, we propose Self-Challenging Class Activation Maps (\scam), combining the two approaches as shown in \Cref{alg:ActivationMasking}. For that, during each step of the training procedure, we extract the features, compute the gradients with respect to the features as in \Cref{eq:gz}, and perform spatial average pooling to yield $\featurega$ according to \Cref{eq:ChannelRSCavg}. Our method deviates from Channel-Wise RSC by next computing class activation maps $\mathbf{M}_c \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ according to \Cref{eq:Map} for the ground truth class label.
+Therefore, as an intuitive baseline, we propose Diversified Class Activation Maps (\divcam), combining the two approaches as shown in \Cref{alg:ActivationMasking} or visualized on a high level in \Cref{fig:divcam-overview}. For that, during each step of the training procedure, we extract the features, compute the gradients with respect to the features as in \Cref{eq:gz}, and perform spatial average pooling to yield $\featurega$ according to \Cref{eq:ChannelRSCavg}. Our method deviates from Channel-Wise RSC by next computing class activation maps $\mathbf{M}_c \in \mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times 1}$ according to \Cref{eq:Map} for the ground truth class label.
 \begin{equation}
 \label{eq:Map}
     \mathbf{M}_c = \mathtt{max}(0,\sum_{k=1}^K\Tilde{\mathbf{g}}_{\mathbf{z},c}^k \mathbf{z}^k)
@@ -35,7 +35,7 @@ As class activation maps and the corresponding masks are averaged along the chan
 \end{equation}
 where $\odot$ is the Hadamard product. The new feature vector $\Tilde{\mathbf{z}}$ is used as input to the classifier $w$ in place of the original $\mathbf{z}$ to regularize the training procedure. For the masked features, we compute the Cross-Entropy Loss from \Cref{eq:cross_entropy} and backpropagate the gradient of the loss to the whole network to update the parameters.
 
-Intuitively, constantly applying this masking for all samples within each batch disregards important features and results in relatively poor performance as the network isn't able to learn discriminant features in the first place. Therefore, applying the mask only for certain samples within each batch as mentioned by \citet[Secton~3.3]{huang2020selfchallenging} should yield a better performance. For convenience, we call this process \emph{mask batching}. On top of that, one could schedule the mask batching with an increasing factor (\eg linear schedule) such that masking gets applied more in the later training epochs where discriminant features have been learned. We apply the mask only if the sample $n$ is within the $(100-b)\mathrm{th}$ percentile of confidences for the correct class and reset the mask otherwise by setting each spatial location $(i,j)$ back to $1$:
+Intuitively, constantly applying this masking for all samples within each batch disregards important features and results in relatively poor performance as the network isn't able to learn discriminative features in the first place. Therefore, applying the mask only for certain samples within each batch as mentioned by \citet[Secton~3.3]{huang2020selfchallenging} should yield a better performance. For convenience, we call this process \emph{mask batching}. On top of that, one could schedule the mask batching with an increasing factor (\eg linear schedule) such that masking gets applied more in the later training epochs where discriminant features have been learned. We apply the mask only if the sample $n$ is within the $(100-b)\mathrm{th}$ percentile of confidences for the correct class and reset the mask otherwise by setting each spatial location $(i,j)$ back to $1$:
 \begin{equation}
     \mathbf{m}^n_{c,i,j}=\left\{\begin{array}{ll}
 1, & \text { if } \quad \mathbf{c}^n \leq q_{b} \\
@@ -46,7 +46,7 @@ Intuitively, constantly applying this masking for all samples within each batch 
  where $ \mathbf{c}^n$ is is the confidence on the ground truth for sample $n$.. For our full ablation study on applying the masks within each batch, please see \Cref{sec:ablation_study_batching}.
 
 \subsection{Focusing on the right features}
-To try and improve the effectiveness of our CAM-based regularization approach, we can borrow some practices from the weakly localization literature. In particukar, we explore the use of Homogeneous Negative CAMs (HNC) \citep{sun2020fixing} and Threshold Average Pooling (TAP) \citep{Bae2020RethinkingCAM}. Both methods improve the performance of ordinary CAMs and focus them better on the relevant aspects of an image. 
+To try and improve the effectiveness of our CAM-based regularization approach, we can borrow some practices from the weakly-supervised object localization literature. In particukar, we explore the use of Homogeneous Negative CAMs (HNC) \citep{sun2020fixing} and Threshold Average Pooling (TAP) \citep{Bae2020RethinkingCAM}. Both methods improve the performance of ordinary CAMs and focus them better on the relevant aspects of an image. See \Cref{sec:abl-masks} for an evaluation of these variants.
 
 \subsubsection{Global Average Pooling bias for small activation areas}
 According to \citet{Bae2020RethinkingCAM}, the first problem of traditional class activation maps is that the activated areas for each feature map differ by channel because they capture different class information which isn't properly reflected in the global average pooling operation. Since every channel is globally averaged, smaller feature activation areas result in smaller globally averaged values despite a similar maximum activation value. This doesn't necessarily mean that one of the features is more relevant for the prediction though. To combat the smaller value for the prediction, the weight $w_{k,c}$ corresponding to the smaller value, is often trained to be higher when comparing the two \citep{Bae2020RethinkingCAM}. Instead of the global average pooling operation, they propose \emph{Threshold Average Pooling} (TAP). When adapting their approach for our notation, we receive \Cref{eq:tap} where $\tau_{t a p} = \theta_{tap} \cdot \mathtt{max}(\Tilde{\mathbf{z}}^k)$ with $\theta_{tap} \in [0,1)$ as a hyperparameter and $p^k_{tap}$ denotes the scalar from the $k$-th channel of $\mathbf{p}_{tap}$ as it is a $k$-dimensional vector. 
@@ -54,7 +54,7 @@ According to \citet{Bae2020RethinkingCAM}, the first problem of traditional clas
 \label{eq:tap}
 p^k_{tap} =\frac{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right) \Tilde{\mathbf{z}}^k_{i,j}}{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right)}
 \end{equation}
-When incorporating this into out method, this results in changing the global average pooling after the last convolutional layer in the ResNet architecture to a threshold average pooling. Generally, this plug-in replacement can be seen as a trade-off between \emph{global max pooling} which is better at identifying the important activations of each channel and \emph{global average pooling} which has the advantage that it expands the activation to broader regions, allowing the loss to backpropagate.
+When incorporating this into \divcam, this results in changing the global average pooling after the last convolutional layer in the ResNet architecture to a threshold average pooling. Generally, this plug-in replacement can be seen as a trade-off between \emph{global max pooling} which is better at identifying the important activations of each channel and \emph{global average pooling} which has the advantage that it expands the activation to broader regions, allowing the loss to backpropagate.
 
 \begin{algorithm}[t]
     \SetAlgoLined
@@ -74,7 +74,7 @@ When incorporating this into out method, this results in changing the global ave
             Backpropagate loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ \;
             }
     }
-\caption{\scam}
+\caption{Diversified Class Activation Maps (\divcam)}
 \label{alg:ActivationMasking}
 \end{algorithm}
 
@@ -100,7 +100,7 @@ Generally, with this approach, we add two hyperparametes in the form of the weig
 \label{eq:hnc-kl-simple}
     \mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})= -\frac{1}{H_\mathbf{z} W_\mathbf{z}} \sum_{c \in J^{\prime}_>} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \log \left(\boldsymbol{M}_{c, i, j}^{\prime}\right)
 \end{equation}
-Since in \scam we use Grad-CAMs instead of ordinary CAMs, na\"{i}vely this would require computing the gradient for every negative class $c$ in the set $J^\prime_>$ which would result in computing \Cref{eq:hnc-kl-grad-cam} where $y_c$ is the confidence of the negative class. 
+Since in \divcam we use Grad-CAMs instead of ordinary CAMs, na\"{i}vely this would require computing the gradient for every negative class $c$ in the set $J^\prime_>$ which would result in computing \Cref{eq:hnc-kl-grad-cam} where $y_c$ is the confidence of the negative class. 
 \begin{equation}
 \label{eq:hnc-kl-grad-cam}
     \mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})= -\frac{1}{H_\mathbf{z} W_\mathbf{z}} \sum_{c \in J^{\prime}_>} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \log \left( \sigma \left(\mathtt{max}\left(0,\sum_{k=1}^K\left(\frac{1}{H_\mathbf{z}W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \frac{\partial y_c}{\partial \mathbf{z}_{i,j}^k}\right)^k \mathbf{z}^k\right)\right)\right)
@@ -110,34 +110,37 @@ To speed up the training for tasks with a large number of classes, we approximat
 \label{eq:hnc-kl-grad-cam-approx}
     \widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})= -\frac{1}{H_\mathbf{z} W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \log \left( \sigma \left(\mathtt{max}\left(0,\sum_{k=1}^K\left(\frac{1}{H_\mathbf{z}W_\mathbf{z}} \sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \frac{\partial \sum_{c \in J^{\prime}_>} y_c}{\partial \mathbf{z}_{i,j}^k}\right)^k \mathbf{z}^k\right)\right)\right)
 \end{equation}
-To finally implement this into \scam, we simply substitute the current loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ in line $12$ from \Cref{alg:ActivationMasking} with \Cref{eq:hnc} where $\mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})$ is implemented through our approximation $\widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})$ given in \Cref{eq:hnc-kl-grad-cam-approx}. 
+To finally implement this into \divcam, we simply substitute the current loss $\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))$ in line $12$ from \Cref{alg:ActivationMasking} with \Cref{eq:hnc} where $\mathcal{L}_{hnc}(\mathbf{y}, \boldsymbol{M})$ is implemented through our approximation $\widehat{\mathcal{L}}_{hnc}(\mathbf{y}, \boldsymbol{M})$ given in \Cref{eq:hnc-kl-grad-cam-approx}. 
 
 \subsection{Beyond thresholding with domain agnosticism}
-Next, we can try to utilize more domain information in \scam by aligning distributions of class activation maps produced by the same class across domains. Intuitively, we want their distributions to align as close as possible such that we cannot identify which domain procuded which class activation map. For that, we can utilize some methods previously introduced in \Cref{sec:invariant_features}, in particular a simple method is using maximum mean discrepancy introduced in \Cref{eq:mmd} and adapting it for domain generalization with self-challenging class activation maps.
+Next, we can try to utilize more domain information in \divcam by aligning distributions of class activation maps produced by the same class across domains. Intuitively, we want their distributions to align as close as possible such that we cannot identify which domain procuded which class activation map. For that, we can utilize some methods previously introduced in \Cref{sec:invariant_features}, in particular we explore minimizing the sample maximum mean discrepancy introduced in \Cref{eq:mmd} and using a conditional domain adversarial neural network (CDANN). See \Cref{sec:abl-masks} for an evaluation of these variants.
 
 \subsubsection{Conditional Domain Adversarial Neural Networks}
-TODO
+We combine domain adversarial neural network (CDANN), originally introduced by \citet{LiGTLT18}, with \divcam to align the distributions of CAMs across domains. For that, we try to predict the domain to which a class activation map belongs by passing it to a multi-layer perceptron. We compute the cross entropy loss between the predictions and the correct domain and weight it for each sample by the occurrence probability of the respective class. After weighting, we can sum up all the losses and add it to our overall loss, weighted by $\lambda$. During each training step, we either update the discriminator (the predictor for the domain) or the generator (our main network). 
 
-\subsubsection{Maximum Mean Discrepancy with semantic alignment}
-Given two class activation maps for the same class $\mathbf{M}^1_c$ and $\mathbf{M}^2_c$ produced by two domains $\mathcal{D}^1$ and $\mathcal{D}^2$ with samples drawn from individual, unknown distribution $P$ and $Q$, the maximum mean discrepancy (MMD) is given by \Cref{eq:mmd_maps} where $\varphi: \mathbb{R}^{d} \rightarrow \mathcal{H}$ is a feature map and $k(\cdot, \cdot)$ is the kernel function induced by $\varphi(\cdot)$. We consider every distinct pair of source domains $(u,v)$, representing training domains $\mathcal{D}^u$ and $\mathcal{D}^v$, with $u\neq v$ to be in the set $\Gamma$.
+\subsubsection{Maximum Mean Discrepancy}
+
+Given two samples $\mathbf{x}^1$ and $\mathbf{x}^2$ produced by two domains $\mathcal{D}^1$ and $\mathcal{D}^2$ and drawn from individual, unknown distribution $P$ and $Q$, the maximum mean discrepancy (MMD) is given by \Cref{eq:mmd_maps} where $\varphi: \mathbb{R}^{d} \rightarrow \mathcal{H}$ is a feature map and $k(\cdot, \cdot)$ is the kernel function induced by $\varphi(\cdot)$. We consider every distinct pair of source domains $(u,v)$, representing training domains $\mathcal{D}^u$ and $\mathcal{D}^v$, with $u\neq v$ to be in the set $\Gamma$.
 \begin{equation}
 \label{eq:mmd_maps}
-    \mathcal{L}_{MMD} =\sum_{u,v \in \Gamma}\sum_{c=1}^C\left\|\mathbb{E}_{\mathbf{M}^u_c \sim P}[\varphi(\mathbf{M}^u_c)]-\mathbb{E}_{\mathbf{M}^v_c \sim Q}[\varphi(\mathbf{M}^v_c)]\right\|_{\mathcal{H}}
+    \mathcal{L}_{MMD} =\sum_{u,v \in \Gamma}\left\|\mathbb{E}_{\mathbf{x}^u \sim P}[\varphi(\mathbf{x}^u)]-\mathbb{E}_{\mathbf{x}^v \sim Q}[\varphi(\mathbf{x}^v)]\right\|_{\mathcal{H}}
 \end{equation}
-In simpler terms, we map class activation map instances to a reproducing kernel Hilbert space $\mathcal{H}$, and compute their mean differences within the RKHS. This enforces maps from different domains which represent the same class to lie nearby in the embedding space. According to \citet{SriperumbudurFGLS09}, this mean embedding is injective if we use a characteristic kernel \ie arbitrary distributions are uniquely represented in the RKHS. For this work we chose the gaussian kernel shown in \Cref{eq:gaussian_kernel} which is a well-known characteristic kernel.
+In simpler terms, we map samples into a reproducing kernel Hilbert space $\mathcal{H}$, and compute their mean differences within the RKHS. This samples from different domains which represent the same class to lie nearby in the embedding space. According to \citet{SriperumbudurFGLS09}, this mean embedding is injective if we use a characteristic kernel \ie arbitrary distributions are uniquely represented in the RKHS. For this work we chose the gaussian kernel shown in \Cref{eq:gaussian_kernel} which is a well-known characteristic kernel.
 \begin{equation}
 \label{eq:gaussian_kernel}
     k(x,x') = \exp \left(-\frac{\|x-x'\|^{2}}{2 \sigma^{2}}\right)
 \end{equation}
-\citet{MotiianPAD17} extend this idea for the ordinary domain generalization setting by not only aligning samples from different domains with the same class label but also separating different domains with different labels. For that, they use a similarity metric between distributions which penalizes if the two come close \citep{MotiianPAD17}. If we consider every distinct pair of class labels $(c_1,c_2)$ with $c_1 \neq c_2$ to be in the set $\Psi$, we can adapt their approach for class activation maps with \Cref{eq:separation}.
+Since the choice of kernel function can have a significant impact on the distance metric, we adopt the approach of \citet{LiPWK18} and use a mixture kernel by averaging over multiple choices of $\sigma$ as already implemented in \domainbed. This gets then incorporated into our loss function weighted by $\gamma$ with:
 \begin{equation}
-\label{eq:separation}
-    \mathcal{L}_{CCSA} =\sum_{u,v \in \Gamma}\sum_{c_1,c_2 \in \Psi} + \mathcal{L}_{MMD}
+    \mathcal{L} = \mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))+\gamma \mathcal{L}_{MMD}
 \end{equation}
+With this approach, we inherently align the computed masks by aligning the individual samples from different domains. 
+
+\section{Prototype Network for Domain Generalization}
 
 
 \section{Experiments}
-In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed as well as \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.
+In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed which includes our implementation of \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.
 
 \paragraph{Datasets and splits}
 Since the size of the validation dataset can have a heavy impact on performance, we follow the design choices of \domainbed and choose $20\%$ of each domain as the validation size for all experiments and ablation studies. Here, we present results for VLCS \citep{FangXR13}, PACS \citep{LiYSH17}, Office-Home \citep{VenkateswaraECP17}, Terra Incognita \citep{BeeryHP18}, and DomainNet \citep{PengBXHSW19}. Although sometimes disregarded in the body of literature for domain generalization, we provide results for three different dataset splits to assess the stability regarding the model selection and avoid overfitting on one split. 
@@ -184,6 +187,7 @@ For the mask ablation study, we use \adam \cite{Kingma2015} and the distribution
         mlp width & $512$ \\
         mlp depth & $3$ \\
         mlp dropout & $0.5$ \\
+        mmd gamma & $\loguni{-1}{1}$ \\
         \bottomrule 
     \end{tabular}
     \caption[Hyperparameters and distributions used for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$, $\floor{\cdot}$ is the floor operator, and $[\cdot]$ represents a choice.}
@@ -228,8 +232,8 @@ MTL*                  &  \citep{blanchard2017domain}           	  & 77.7 $\pm$ 0
 SagNet*             &   \citep{nam2019reducing}           	& 77.6 $\pm$ 0.1            & 86.4 $\pm$ 0.4            & 67.5 $\pm$ 0.2            & 52.5 $\pm$ 0.4            & 40.8 $\pm$ 0.2            & 64.9                      \\
 ARM*                  &   \citep{zhang2020adaptive}           		& 77.8 $\pm$ 0.3            & 85.8 $\pm$ 0.2            & 64.8 $\pm$ 0.4            & 51.2 $\pm$ 0.5            & 36.0 $\pm$ 0.2            & 63.1                      \\
 VREx*                 &    \citep{krueger2020outofdistribution}       	  & 78.1 $\pm$ 0.2            & 87.2 $\pm$ 0.6            & 65.7 $\pm$ 0.3            & 51.4 $\pm$ 0.5            & 30.1 $\pm$ 3.7            & 62.5                      \\
-RSC*  		& \citep{huang2020selfchallenging}	      & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0             & 00.0 $\pm$ 0.0           & 00.0 $\pm$ 0.0             & 00.0                      \\
-\tdivcams              & (ours) & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0            & 00.0 $\pm$ 0.0             & 00.0 $\pm$ 0.0           & 00.0 $\pm$ 0.0             & 00.0                      \\
+RSC*  		& \citep{huang2020selfchallenging}	       & 77.8 $\pm$ 0.6            & 86.2 $\pm$ 0.5            & 66.5 $\pm$ 0.6            & 52.1 $\pm$ 0.2            & 38.9 $\pm$ 0.6             & 64.3                      \\
+\tdivcams              & (ours) & 78.1 $\pm$ 0.6            & 87.2 $\pm$ 0.1            & 65.2 $\pm$ 0.5             & 51.3 $\pm$ 0.5           & 41.0 $\pm$ 0.0             & 64.6                      \\
 
 \bottomrule
 \end{tabular}
@@ -321,10 +325,13 @@ The last variation is \divcamt where we apply the masks randomly for samples whi
 We observe that adding a schedule helps in most cases, achieving the highest training domain validation performance for \divcams.  Enforcing the application of masks within each domain, however, doesn't consistently improve performance and therefore we don't consider it for the final method.
 
 \subsection{Masks}
+\label{sec:abl-masks}
 
-We combine our masks with other methods from domain generalization, as well as methods to boost the explainability for class activation maps. 
+We combine our masks with other methods from domain generalization, as well as methods to boost the explainability for class activation maps from the weakly-supervised object localization literature. The results are shown in \Cref{tab:scam_masks} where MAP + CDANN drops the self-challenging part from \divcam and just computes ordinary cross entropy while aligning the class activation maps.
 
-\begin{table}[t]
+We observe that, surprisingly, none of the methods have a positive effect for training domain validation even though some of them exhibit better performance for oracle validation. Notably, especially the CDANN approach tends to exhibit a high 
+standard deviation for some of the domains (\eg art) which suggests that this approach can be fine-tuned when only reporting performance on a single seed. However, since we are looking for a method which reliably provides competitive results, regardless of the used seed and without needing extensive fine-tuning, we disregard this option.
+\begin{table}[!htbp]
 \small
 %\renewcommand{\arraystretch}{1.2}
     \centering
