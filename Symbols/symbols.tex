@@ -1,15 +1,20 @@
 \begin{symbols}{p{0.15\textwidth}p{0.7\textwidth}l} % Include a list of Symbols (a three column table)
 
-\multicolumn{3}{l}{\symboltitle{Global notations}}\\ \\
+%\multicolumn{3}{l}{\symboltitle{Global notations}}\\ \\
+
+\multicolumn{3}{l}{\symboltitle{Chapter~2}}\\ \\
 $\xxi$ & instance of input features & --- \\
-$\yyi$ & corresponding label of input features & --- \\
-$\yioh$ & instance of label & --- \\
+$\yyi$ & corresponding label for input features & --- \\
+$\yioh$ & instance of label one-hot encoding & --- \\
 $\sample$ & sample of input and label pair & --- \\
 $\ypred$ & predicted output label & --- \\
-$\xrandom$ & random variable for input features & -- \\
-$\yrandom$ & random variable for output labels & -- \\
+$\xrandom$ & random variable for input features & --- \\
+$\yrandom$ & random variable for output labels & --- \\
+$C$ & number of classes & --- \\
 $\data$ & training dataset & --- \\
 $\dist$ & training distribution & --- \\
+$\zz$ & feature representation & --- \\
+$\Tilde{\mathbf{z}}$ & masked features & --- \\
 $\xs$ & input space & --- \\
 $\ys$ & output space & --- \\
 $\zs$ & latent space & --- \\
@@ -18,19 +23,50 @@ $\p$ & model parameters & --- \\
 $\modelf$ & model predictor & --- \\
 $\featureex$ & feature extractor & --- \\
 $\classifier$ & classifier & --- \\
+$K$ & number of feature maps of the last convolutional layer & --- \\
 $\risk$ & model risk & --- \\
 $\riske$ & empirical model risk & --- \\
 $\lterm$ & loss term & --- \\
 $\envs$ & set of source environments & --- \\
 $\tenvs$ & set of test environments & --- \\
-$\env$ & environment & --- \\[1cm]
-
-
-\multicolumn{3}{l}{\symboltitle{Chapter~2}}\\ \\
-
+$\env$ & environment & --- \\
 $\meta$ & meta distribution & --- \\
 $U$ & unlabeled dataset & --- \\
 $L$ & labeled dataset & --- \\
 $\mathcal{H}$ & reproducing kernel Hilbert space & --- \\
+$\varphi$ & feature map induced by a kernel & --- \\
+$\Delta_\env$ & local envinronment bias & --- \\
+$\p_\env$ & environment parameters & --- \\
+$\mathbf{M}_c$ & class activation map for class $c$ & --- \\
+$\featureg$ & gradient with respect to the features & --- \\
+$\featurega$ & average pooled gradient values & --- \\
+$H_\mathbf{z}$ & feature map height & --- \\
+$W_\mathbf{z}$ & feature map width & --- \\
+$y_c$ & logit for class $c$ & --- \\
+$\mathbf{m}_{i,j}$ & feature mask at spatial location $(i,j)$ & --- \\
+$\mathbf{c}$ & change vector after applying the mask & --- \\
+$q_p$ & feature percentile threshold & --- \\
+$b_p$ & batch percentile threshold & --- \\[1cm]
+
+\multicolumn{3}{l}{\symboltitle{Chapter~3}}\\ \\
+$\modelg$ & interpretable model & --- \\
+$\gs$ & set of interpretable models & --- \\
+$\com$ & complexity measure & --- \\
+$\prots$ & set of prototypes & --- \\
+$\prot$ & $j$-th prototype & --- \\
+$H_\proti$ & height of the prototypes & --- \\
+$W_\proti$ & width of the prototypes & --- \\
+$\unit$ & prototype unit & --- \\
+$\player$ & prototype layer & --- \\
+$\zpatch$ & latent patch & --- \\
+$\simmap$ & similarity map between $j$-th prototype and latent representation & --- \\
+$\stability$ & numerical stability factor & --- \\[1cm]
+
+\multicolumn{3}{l}{\symboltitle{Chapter~4}} \\ \\
+$w_{k,c}$ & weight of the classifier connecting the $k$-th feature map and class $c$ & --- \\
+
+
+
+
 
 \end{symbols}

@@ -52,7 +52,7 @@ To try and improve the effectiveness of our CAM-based regularization approach, w
 According to \citet{Bae2020RethinkingCAM}, the first problem of traditional class activation maps is that the activated areas for each feature map differ by channel because they capture different class information which isn't properly reflected in the global average pooling operation. Since every channel is globally averaged, smaller feature activation areas result in smaller globally averaged values despite a similar maximum activation value. This doesn't necessarily mean that one of the features is more relevant for the prediction though. To combat the smaller value for the prediction, the weight $w_{k,c}$ corresponding to the smaller value, is often trained to be higher when comparing the two \citep{Bae2020RethinkingCAM}. Instead of the global average pooling operation, they propose \emph{Threshold Average Pooling} (TAP). When adapting their approach for our notation, we receive \Cref{eq:tap} where $\tau_{t a p} = \theta_{tap} \cdot \mathtt{max}(\Tilde{\mathbf{z}}^k)$ with $\theta_{tap} \in [0,1)$ as a hyperparameter and $p^k_{tap}$ denotes the scalar from the $k$-th channel of $\mathbf{p}_{tap}$ as it is a $k$-dimensional vector. 
 \begin{equation}
 \label{eq:tap}
-p^k_{tap} =\frac{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right) \Tilde{\mathbf{z}}^k_{i,j}}{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathbb{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right)}
+p^k_{tap} =\frac{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathds{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right) \Tilde{\mathbf{z}}^k_{i,j}}{\sum_{i=1}^{H_\mathbf{z}} \sum_{j=1}^{W_\mathbf{z}} \mathds{1}\left(\Tilde{\mathbf{z}}^k_{i,j} > \tau_{t a p}\right)}
 \end{equation}
 When incorporating this into \divcam, this results in changing the global average pooling after the last convolutional layer in the ResNet architecture to a threshold average pooling. Generally, this plug-in replacement can be seen as a trade-off between \emph{global max pooling} which is better at identifying the important activations of each channel and \emph{global average pooling} which has the advantage that it expands the activation to broader regions, allowing the loss to backpropagate.
 
@@ -137,7 +137,9 @@ Since the choice of kernel function can have a significant impact on the distanc
 With this approach, we inherently align the computed masks by aligning the individual samples from different domains. 
 
 \section{Prototype Network for Domain Generalization}
-
+Distance \& similarity metrics
+L2 better than cosine: \citep{SnellSZ17}
+distance metrics: \citep{BanerjeeMDG04}
 
 \section{Experiments}
 In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed which includes our implementation of \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.

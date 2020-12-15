@@ -12,7 +12,7 @@
 \newcommand{\nag}{\textsc{NAG}\xspace}
 \newcommand{\nadam}{\textsc{Nadam}\xspace}
 \newcommand{\radam}{\textsc{Radam}\xspace}
-\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\DeclarePairedDelimiterX{\norm}[1]{\lVert}{\rVert}{#1}
 \newcommand{\plus}{\raisebox{.4\height}{\scalebox{.6}{+}}}
 \newcommand{\minus}{\raisebox{.4\height}{\scalebox{.8}{-}}}
 \newcommand{\imagequadsize}{1cm}
@@ -33,8 +33,11 @@
 \newcommand{\xrandom}{X}
 \newcommand{\yrandom}{Y}
 \newcommand{\p}{\boldsymbol{\theta}}
+\newcommand{\pg}{\boldsymbol{\theta}^\prime}
 \newcommand{\ps}{\Theta}
 \newcommand{\modelf}{f_{\p}}
+\newcommand{\modelg}{g_{\pg}}
+\newcommand{\gs}{\mathcal{G}}
 \newcommand{\featureex}{\phi}
 \newcommand{\classifier}{w}
 \newcommand{\f}[1]{\modelf(#1)}
@@ -51,6 +54,16 @@
 \newcommand{\env}{\xi}
 \newcommand{\tenvs}{\Phi}
 \newcommand{\meta}{\mathfrak{D}}
+\newcommand{\com}{\Omega}
+\newcommand{\compl}[1]{\com(#1)}
+\newcommand{\proti}{\mathbf{p}}
+\newcommand{\prot}{\mathbf{p}_{j}}
+\newcommand{\prots}{\mathcal{P}}
+\newcommand{\unit}{g_{\prot}}
+\newcommand{\player}{g_\proti}
+\newcommand{\simmap}{\Psi_j}
+\newcommand{\zpatch}{\Bar{\zz}}
+\newcommand{\stability}{\epsilon}
 
 
 \newcommand{\featureg}{\mathbf{g}_\mathbf{z}}
