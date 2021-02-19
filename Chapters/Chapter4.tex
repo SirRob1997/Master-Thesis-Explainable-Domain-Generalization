@@ -255,11 +255,10 @@ Our second approach to enforce the desired distance structures is to add an addi
 \end{equation}
 where the $\ell_2$-distance and the cosine distance are weighted equally. Since the cosine distance is bounded, this commonly amounts to the $\ell_2$ distance having a higher influence. Performance results for the loss presented in \Cref{eq:intra_loss} are shown in \Cref{sec:intra_loss}. 
 
-Even though we experimented with different weighting of the individual distance metrics as well as the overall loss, we observed no \emph{consistent} performance improvements on top of self-challenging across testing environments and data splits. The observations from \Cref{sec:intra_loss}, \Cref{fig:pw_distance_trial1-sc}, and \Cref{sec:additional_distances} suggest that self-challenging inherently already 
-
+Even though we experimented with different weighting of the individual distance metrics as well as the overall loss, we observed no \emph{consistent} performance improvements on top of self-challenging across testing environments and data splits. The observations from \Cref{sec:intra_loss}, \Cref{fig:pw_distance_trial1-sc}, and \Cref{sec:additional_distances} suggest that self-challenging inherently already enforces the desired properties up to the near-optimal extent such that the additional loss term does not provide any consistent further benefits.
 
 \subsection{Influence of the negative weight on the distance metrics}
-
+We also analyze the discrepancies between the distance metrics when comparing $w_{c,j} = -1.0\; \forall j: \prot \notin \prots_c$ and $w_{c,j} = 0.0\; \forall j: \prot \notin \prots_c$ which can be seen in the figures presented in \Cref{sec:additional_distances}. However, from these plots there were no \emph{consistent} trends observable which can be made  
 
 \section{Experiments}
 In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed which includes our provided implementation of \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.
