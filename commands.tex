@@ -44,8 +44,10 @@
 \newcommand{\risk}{R(\modelf)}
 \newcommand{\riske}{R_{\mathrm{erm}}(\modelf)}
 \newcommand{\xxi}{\xx_i}
+\newcommand{\xxic}{\xx_{i,c}}
+\newcommand{\xxq}{\xx_{q}}
 \newcommand{\yyi}{\yy_i}
-\newcommand{\lterm}{\ell}
+\newcommand{\lterm}{\mathcal{L}}
 \newcommand{\lossi}[2]{\lterm\left(#1, #2\right)}
 \newcommand{\sample}{(\xxi, \yyi)}
 \newcommand{\yoh}{\dot{\yy}}
@@ -54,10 +56,11 @@
 \newcommand{\env}{\xi}
 \newcommand{\tenvs}{\Phi}
 \newcommand{\meta}{\mathfrak{D}}
-\newcommand{\com}{\Omega}
+\newcommand{\com}{\Pi}
 \newcommand{\compl}[1]{\com(#1)}
 \newcommand{\proti}{\mathbf{p}}
-\newcommand{\prot}{\mathbf{p}_{j}}
+\newcommand{\prot}{\proti_{j}}
+\newcommand{\protc}{\proti_{j,c}}
 \newcommand{\prots}{\mathcal{P}}
 \newcommand{\unit}{g_{\prot}}
 \newcommand{\munit}{\Tilde{g}_{\prot}}
@@ -112,6 +115,9 @@
 
 \newcommand{\fullname}{diversified class activation maps\xspace}
 \newcommand{\divcamfull}{\textsc{Diversified CAMs for Domain Generalization}\xspace}
+\newcommand{\dtransformers}{\textsc{D-Transformers}\xspace}
+\newcommand{\tdtransformers}{\textsc{D-Transformers}*\xspace}
+
 \newcommand{\divcam}{\textsc{DivCAM}\xspace}
 \newcommand{\divcams}{\textsc{\divcam-S}\xspace}
 \newcommand{\divcamc}{\textsc{\divcam-C}\xspace}
@@ -144,3 +150,22 @@
 
 \DeclarePairedDelimiter\ceil{\lceil}{\rceil}
 \DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+
+\newcommand{\support}{S}
+\newcommand{\supportc}{\support_c}
+\newcommand{\keyh}{\Gamma}
+\newcommand{\valueh}{\Lambda}
+\newcommand{\queryh}{\Omega}
+\newcommand{\dimkey}{d_{k}}
+\newcommand{\dimvalue}{d_{v}}
+\newcommand{\keys}{\mathbf{k}_{i,m,c}^\env}
+\newcommand{\values}{\mathbf{v}_{i,m,c}^\env}
+\newcommand{\valuesq}{\mathbf{w}_{p}^\env}
+\newcommand{\valuesqd}{\mathbf{w}_{p}^{\env, d}}
+\newcommand{\queries}{\mathbf{q}^\env_{p}}
+\newcommand{\protipc}{\proti_{p, c}^\env}
+\newcommand{\protipcd}{\proti_{p, c}^{\env, d}}
+\newcommand{\attentionw}{\alpha_{i,m,c,p}^\env}
+\newcommand{\attentionwf}{\Tilde{\alpha}_{i,m,c,p}^\env}
+\newcommand{\scaler}{\tau}

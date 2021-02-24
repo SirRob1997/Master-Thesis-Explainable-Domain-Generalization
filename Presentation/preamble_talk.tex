@@ -1,0 +1,498 @@
+%!TEX root = talk.tex
+
+% serif fonts for mathematics
+%\usefonttheme[onlymath]{serif}
+
+\usepackage{animate}
+\usepackage{textcase,marvosym,cancel,booktabs,colortbl,nicefrac,ifsym}
+\usepackage{fourier-orns}
+\usepackage{amsmath,amssymb,graphicx,tikz,pgfplots,colonequals,mathtools} % MnSymbol
+\usepackage{booktabs,multirow,multicol}
+\usepackage{pifont} % for the dingbats in the line search plots
+% \usepackage{stix} % for \sumint
+
+\usepackage{multido}
+\usepackage{makecell}
+\usepackage{soul} % for better underline with ul{}
+\usetikzlibrary{tikzmark,decorations.pathreplacing,calc}
+
+%% not used with xetex
+\usepackage{microtype}
+\usepackage[utf8]{inputenc}
+
+% a few colours, for general use.
+\definecolor{lred}{RGB}{200,0,0}
+\definecolor{dred}{RGB}{130,0,0} 
+\definecolor{dblu}{RGB}{0,0,130}
+\definecolor{dgre}{RGB}{0,130,0} 
+\definecolor{dgra}{RGB}{50,50,50}
+\definecolor{mgra}{RGB}{221,222,214}
+\definecolor{lgra}{RGB}{238,238,234}
+\definecolor{MPG}{RGB}{000,125,122}
+\definecolor{lMPG}{RGB}{000,190,189}
+\definecolor{ora}{HTML}{cc7a00} 
+\definecolor{lblu}{HTML}{7DA7D9}%PS blue
+
+% Color scheme of the Eberhard-Karls University
+\definecolor{TUred}{RGB}{141,45,57}
+\definecolor{TUdark}{RGB}{55,65,74}
+\definecolor{TUgold}{RGB}{174,159,109}
+\definecolor{TUgray}{RGB}{175,179,183}
+
+\definecolor{ERC_ora}{RGB}{233,93,15}
+
+\setlength{\parindent}{0pt}
+
+\newcommand{\mpg}[1]{{\color{MPG} #1}}   % highlight command 1
+\newcommand{\dre}[1]{{\color{TUred} #1}}   % highlight command 1
+\newcommand{\blu}[1]{{\color{dblu} #1}}   % highlight command 1
+\newcommand{\ora}[1]{{\color{ora} #1}}   % highlight command 1
+\newcommand{\gra}[1]{{\color{mgra} #1}}   % highlight command 1
+\newcommand{\gold}[1]{{\color{TUgold} #1}}   % highlight command 1
+\setbeamercolor{alerted text}{fg = TUred} % highlight command 2
+
+\setbeamercolor{normal text}{fg=black,bg=white}
+\setbeamercolor{structure}{fg=TUred}
+
+\setbeamercolor{item projected}{use=item,fg=black,bg = TUred}
+
+\setbeamercolor*{palette primary}{fg=white,bg=TUred}
+\setbeamercolor*{palette secondary}{parent=palette primary,use=palette
+primary,bg=dblu} 
+\setbeamercolor*{palette tertiary}{parent=palette
+primary,use=palette primary,fg=white,bg=dgre} 
+\setbeamercolor*{palette
+quaternary}{parent=palette primary,use=palette primary,bg=dgre}
+
+\setbeamercolor*{block body}{bg=TUgray, fg =black}
+\setbeamercolor*{block title}{parent=structure,bg=TUdark,fg=white}
+\setbeamercolor{block body alerted}{bg=TUgray,fg=TUred}
+\setbeamercolor{block title example}{fg=MPG,bg=white}
+\setbeamercolor{block body example}{fg=black,bg=white}
+
+\setbeamercolor{frametitle}{bg=TUdark,fg=white}
+\setbeamercolor{frametitle right}{bg=white}
+\setbeamercolor{framesubtitle}{fg=TUgray}
+
+% \setbeamerfont{framesubtitle}{size*={8}{12}}
+
+\setbeamercolor{title}{fg=TUred}
+\setbeamercolor{subtitle}{fg=black} \setbeamercolor{author}{fg=TUdark}
+\setbeamercolor{date}{fg=TUdark}
+
+\setbeamercolor*{titlelike}{parent=structure}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{bibliography item}[triangle]
+
+\setbeamerfont{frametitle}{}
+
+%%%% REDEFINE \emph to COLORS.
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\color{TUred}\bfseries} % changed from \em
+
+% \setbeamertemplate{itemize items}{\color{TUgold}$\blacktriangleright$}
+\setbeamertemplate{itemize items}{\starredbullet}
+
+\setbeamertemplate{footline}{\hfill\color{TUdark}{\insertframenumber}\hspace{2ex}\null\newline\vspace{2mm}}
+
+\arrayrulecolor{TUdark}
+
+\newcommand{\filltotal}{\hspace{0pt plus 1 filll}}
+
+\newcommand{\framesubtitlecite}[2]{\framesubtitle{#1 \filltotal #2}}
+
+\newcommand{\titlemark}[1]{
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[draw=none,text=TUgray,anchor=north east,yshift=-.8259cm] at (current
+    page.north east) {\footnotesize{#1}};
+  \end{tikzpicture}
+}
+
+\newcommand{\graybox}[1]{
+  \tikzexternaldisable%
+  \begin{center}%
+    \tikz{\node[fill=TUdark,text width=\textwidth]{%
+        \begin{minipage}{1.0\linewidth}%
+        \color{white}
+          \begin{center}%
+            #1
+          \end{center}%
+        \end{minipage}};}%
+  \end{center}%
+  \tikzexternalenable 
+}
+
+\newcommand{\divider}{\noindent\makebox[\linewidth]{\rule{\paperwidth}{.4pt}}  }
+
+\newcommand{\paperwhite}{\includegraphics[height=.6\baselineskip]{../text-document_white.png}\hspace{.5em}}
+\newcommand{\paperblack}{\includegraphics[height=.6\baselineskip]{../text-document.png}\hspace{.5em}}
+
+\newcommand{\bookwhite}{\includegraphics[height=.6\baselineskip]{../book-white.png}\hspace{.5em}}
+\newcommand{\bookblack}{\includegraphics[height=.6\baselineskip]{../book-black.png}\hspace{.5em}}
+
+\setbeamercolor{ribboncolor}{fg=black,bg=TUgold}
+\newcommand{\ribbon}[1]{
+    \begin{beamercolorbox}[wd=\paperwidth,colsep*=.3em,center]{ribboncolor}
+    \setbeamertemplate{itemize items}{\color{black}\starredbullet}
+    \setbeamercolor{structure}{fg=white}
+    \begin{minipage}{1.0\textwidth}%
+            #1
+        \end{minipage}
+    \end{beamercolorbox}
+}
+\setbeamercolor{whiteribboncolor}{fg=black,bg=white}
+\newcommand{\whiteribbon}[1]{
+    \begin{beamercolorbox}[wd=\paperwidth,colsep*=.5em,center,text width=\textwidth]{whiteribboncolor}
+    \setbeamertemplate{itemize items}{\color{black}\starredbullet}
+    \setbeamercolor{structure}{fg=black}
+    \begin{minipage}{\textwidth}%
+            #1
+        \end{minipage}
+    \end{beamercolorbox}
+}
+
+\newcommand{\bfa}[1]{
+  \begin{beamercolorbox}[wd=\paperwidth,colsep*=.5em,center]{white}
+    \setbeamertemplate{itemize items}{\color{black}\starredbullet}
+    \tikzexternaldisable
+    \begin{tikzpicture}
+    \node[signal,minimum width=\paperwidth,draw=TUgold,fill=TUgold,text=black,text width=\textwidth]{
+    \begin{minipage}{\textwidth}%
+            #1
+        \end{minipage}};
+    \end{tikzpicture}
+    \tikzexternalenable
+    \end{beamercolorbox}
+}
+
+\newcommand{\bfi}[1]{
+  \begin{beamercolorbox}[wd=\paperwidth,colsep*=.5em,center,text width=\textwidth]{white}
+    \setbeamertemplate{itemize items}{\color{black}\starredbullet}
+    \tikzexternaldisable
+    \begin{tikzpicture}
+    \node[signal,signal from=west,signal to=nowhere,minimum width=\linewidth,draw=TUgold,fill=TUgold,text=black,signal pointer angle=140]{
+    \begin{minipage}{\textwidth}%
+            #1
+        \end{minipage}};
+    \end{tikzpicture}\hspace{2.5mm}
+    \tikzexternalenable
+    \end{beamercolorbox}
+}
+
+\newcommand{\blackslide}{
+{\setbeamercolor{background canvas}{bg=black}
+  \begin{frame}[plain]
+    \null
+  \end{frame}
+}}
+
+
+\newcommand{\blackslidetext}[1]{
+{\setbeamercolor{background canvas}{bg=TUdark}%
+  \setbeamercolor{structure}{fg=white}%
+  \setbeamercolor{normal text}{fg=white}%
+  \setbeamercolor{body}{fg=white}%
+  \setbeamertemplate{itemize items}{\color{white}\starredbullet}%
+  \begin{frame}
+    \color{white} #1
+  \end{frame}
+}}
+
+% logo in the upper right corner
+\usepackage{eso-pic}
+\newcommand\AtPagemyUpperLeft[1]{\AtPageLowerLeft{%
+\put(\LenToUnit{0.83\paperwidth},\LenToUnit{0.915\paperheight}){#1}}}
+\AddToShipoutPictureFG{
+  \AtPagemyUpperLeft{{\includegraphics[width=2.5cm,keepaspectratio]{assets/UT_WBMW_Weiss_1C.pdf}}}
+}%
+
+%%%% REDEFINE \emph to COLORS.
+\let\emph\relax % there's no \RedeclareTextFontCommand
+\DeclareTextFontCommand{\emph}{\color{TUred}\bfseries} % } changed from \em
+
+%% Macros
+\newcommand{\g}{\mid} 
+\newcommand{\de}{\partial}
+\renewcommand{\d}{\:\mathrm{d}} 
+\newcommand{\Exp}{\mathsf{E}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Ent}{\mathsf{H}}
+\newcommand{\Cov}{\operatorname{cov}} 
+\newcommand{\cov}{\operatorname{cov}} 
+\newcommand{\std}{\operatorname{std}} 
+\newcommand{\Var}{\operatorname{var}} 
+\newcommand{\var}{\operatorname{var}} 
+\renewcommand{\H}{\mathcal{H}}
+\newcommand{\K}{\mathcal{K}} 
+\newcommand{\KL}{\text{KL}} 
+\renewcommand{\Re}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}} 
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\cC}{\mathcal{C}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\B}{\mathcal{B}}
+\renewcommand{\L}{\mathcal{L}}
+\newcommand{\Trans}{^{\intercal}} 
+\newcommand{\rep}{\text{rep}}
+\newcommand{\base}{\text{base}} 
+\newcommand{\eval}{\text{eval}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\argmin}{\operatorname*{arg\:min}}
+\newcommand{\argmax}{\operatorname*{arg\:max}}
+%\renewcommand{\=}{\operatorname*{=}}
+\newcommand{\spa}{\operatorname{span}} 
+\newcommand{\erf}{\operatorname{erf}}
+\newcommand{\ce}{\colonequals}
+\newcommand{\ec}{\equalscolon}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\rk}{\operatorname{rk}}
+
+\makeatletter
+% Taken from http://ctan.org/pkg/centernot
+\newcommand*{\centernot}{%
+  \mathpalette\@centernot
+}
+\def\@centernot#1#2{%
+  \mathrel{%
+    \rlap{%
+      \settowidth\dimen@{$\m@th#1{#2}$}%
+      \kern.5\dimen@
+      \settowidth\dimen@{$\m@th#1=$}%
+      \kern-.5\dimen@
+      $\m@th#1\not$%
+    }%
+    {#2}%
+  }%
+}
+\makeatother
+
+\newcommand{\independent}{\perp\mkern-9.5mu\perp}
+\newcommand{\notindependent}{\centernot{\independent}}
+
+\newcommand{\q}{\quad}
+\newcommand{\qq}{\qquad}
+\newcommand{\qqq}{\quad\qquad}
+\newcommand{\qqqq}{\qquad\qquad}
+
+\usepackage[e]{esvect} % for extensible vector accents (\vect{})
+
+\renewcommand{\vec}{\boldsymbol} 
+\newcommand{\fun}[1]{\mathsf{#1}}
+\newcommand{\vect}[1]{\vv{#1}}
+% \newcommand{\vect}[1]{\overrightharpoon{#1}}
+\renewcommand{\O}{\mathcal{O}}
+\newcommand{\GP}{\mathcal{GP}}
+\newcommand{\Id}{I} 
+\newcommand{\II}{\mathbb{I}}
+
+\makeatletter
+\newcommand{\superimpose}[2]{%s
+  {\ooalign{$#1\@firstoftwo#2$\cr\hfil$#1\@secondoftwo#2$\hfil\cr}}}
+\makeatother
+\newcommand{\ostimes}{\mathpalette\superimpose{{\otimes}{\ominus}}}
+\newcommand{\oatimes}{\mathpalette\superimpose{{\otimes}{\obar}}}
+
+\DeclareMathOperator*{\sumint}{\mathpalette\superimpose{{\int}{\sum}}}
+% \newcommand{\ostimes}{\circledast}
+
+\newcommand{\y}{\vec{y}}
+\newcommand{\x}{\vec{x}}
+\newcommand{\X}{\vec{X}}
+\newcommand{\bX}{\mathbb{X}}
+\newcommand{\const}{\mathrm{const.}}
+
+\newcommand{\up}{\textasciicircum}
+
+
+%%%%%%%% TiKZ %%%%%%%%
+\usetikzlibrary{arrows,shapes,plotmarks,decorations.pathmorphing}
+\usetikzlibrary{backgrounds,calc,positioning,fadings}
+
+\tikzset{>=stealth'} 
+\tikzstyle{graphnode} = 
+   [circle,draw=TUdark,minimum size=22pt,text centered,text
+     width=22pt,inner sep=0pt] 
+\tikzstyle{var}   =[graphnode,fill=white]
+\tikzstyle{obs}   =[graphnode,fill=TUdark,text=white]
+\tikzstyle{act}   =[rectangle,draw=black,text=white,minimum
+size=22pt,text centered, text width=22pt,inner sep=0pt]
+\tikzstyle{fac}   =[rectangle,draw=black,fill=black!25,minimum size=5pt]
+\tikzstyle{facprior} =[rectangle,draw=black,fill=black,text=white,minimum size=5pt]
+\tikzstyle{edge}  =[draw=TUdark,thin,->]
+\tikzstyle{undirected}  =[draw=TUdark,thin,-]
+\tikzstyle{prior} =[rectangle, draw=black, fill=black, minimum size=
+5pt, inner sep=0pt]
+\tikzstyle{dirprior} = [circle, draw=black, fill=black, minimum
+size=5pt, inner sep=0pt]
+
+\tikzfading[name=fade top,bottom color=transparent!0,top color=transparent!75]
+
+% to avoid warnings, copy only two symbols from stmaryrd
+\DeclareSymbolFont{stmry}{U}{stmry}{m}{n}
+\DeclareMathSymbol\leftarrowtriangle\mathrel{stmry}{"5E}
+\DeclareMathSymbol\rightarrowtriangle\mathrel{stmry}{"5F}
+\DeclareMathSymbol\sslash\mathrel{stmry}{"0C}
+\DeclareMathSymbol\obar\mathrel{stmry}{"3A}
+\DeclareMathSymbol\otimes\mathrel{stmry}{"0F}
+\DeclareMathSymbol\ominus\mathrel{stmry}{"17}
+\DeclareMathSymbol\minuso\mathrel{stmry}{"0A}
+\renewcommand{\gets}{\operatorname*{\leftarrowtriangle}}
+\renewcommand{\to}{\operatorname*{\rightarrowtriangle}}
+
+\usetikzlibrary{arrows,shapes,plotmarks,pgfplots.colormaps}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{compat=newest}
+\pgfplotsset{
+  every axis legend/.append style =
+    {
+      cells = { anchor = east },
+      draw  = none
+    },
+}  
+\makeatletter
+\pgfplotsset{ 
+    range frame/.style={
+        tick align = outside,
+        axis line style={opacity=0},
+        after end axis/.code={
+            \draw ({rel axis cs:0,0}-|{axis cs:\pgfplots@data@xmin,0}) -- ({rel axis cs:0,0}-|{axis cs:\pgfplots@data@xmax,0});
+            \draw ({rel axis cs:0,0}|-{axis cs:0,\pgfplots@data@ymin}) -- ({rel axis cs:0,0}|-{axis cs:0,\pgfplots@data@ymax});
+        }
+    }
+}
+\makeatother
+
+\pgfkeys{/pgfplots/mystyle/.style={
+  % semithick,
+  % tick style={major tick length=4pt,semithick,gray},
+  xtick align = inside,
+  ytick align = inside
+  }}
+
+\pgfkeys{/pgfplots/mytuftestyle/.style={
+  semithick,
+  tick style={major tick length=4pt,semithick,black},
+  separate axis lines,
+  axis x line*=bottom,
+  axis x line shift=5pt,
+  xlabel shift=0pt,
+  axis y line*=left,
+  tick align = outside,
+  axis y line shift=5pt,
+  ylabel shift=0pt}}
+
+
+%%%% THEOREM environments
+\newtheorem{defi}{Definition}[section]
+\newtheorem{theo}[defi]{Theorem}
+\newtheorem{cor}[defi]{Corollary}
+\newtheorem{lemm}[defi]{Lemma}
+\newtheorem{prob}[defi]{Problem}
+
+\newlength{\figureheight}
+\newlength{\figurewidth}
+\newlength{\figheight}
+\newlength{\figwidth}
+
+% algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\algrenewcommand{\algorithmiccomment}[1]{\hfill {$\sslash$ \scriptsize #1}}
+\algrenewcommand\alglinenumber[1]{\tiny #1}
+
+
+% %%%%%% adding vertical bars to algorithmicx. Based on a response at 
+% % http://tex.stackexchange.com/questions/52473/is-it-possible-to-have-connecting-loop-lines-like-algorithm2e-in-algorithmic/52778#52778
+\makeatletter
+% This is the vertical rule that is inserted
+\def\therule{\makebox[\algorithmicindent][l]{\hspace*{.5em}\vrule height .75\baselineskip depth .25\baselineskip}}%
+
+\newtoks\therules% Contains rules
+\therules={}% Start with empty token list
+\def\appendto#1#2{\expandafter#1\expandafter{\the#1#2}}% Append to token list
+\def\gobblefirst#1{% Remove (first) from token list
+  #1\expandafter\expandafter\expandafter{\expandafter\@gobble\the#1}}%
+\def\LState{\State\unskip\the\therules}% New line-state
+\def\pushindent{\appendto\therules\therule}%
+\def\popindent{\gobblefirst\therules}%
+\def\printindent{\unskip\the\therules}%
+\def\printandpush{\printindent\pushindent}%
+\def\popandprint{\popindent\printindent}%
+
+%      ***      DECLARED LOOPS      ***
+% (from algpseudocode.sty)
+\algdef{SE}[WHILE]{While}{EndWhile}[1]
+  {\printandpush\algorithmicwhile\ #1\ \algorithmicdo}
+  {\popandprint\algorithmicend\ \algorithmicwhile}%
+\algdef{SE}[FOR]{For}{EndFor}[1]
+  {\printandpush\algorithmicfor\ #1\ \algorithmicdo}
+  {\popandprint\algorithmicend\ \algorithmicfor}%
+\algdef{S}[FOR]{ForAll}[1]
+  {\printindent\algorithmicforall\ #1\ \algorithmicdo}%
+\algdef{SE}[LOOP]{Loop}{EndLoop}
+  {\printandpush\algorithmicloop}
+  {\popandprint\algorithmicend\ \algorithmicloop}%
+\algdef{SE}[REPEAT]{Repeat}{Until}
+  {\printandpush\algorithmicrepeat}[1]
+  {\popandprint\algorithmicuntil\ #1}%
+\algdef{SE}[IF]{If}{EndIf}[1]
+  {\printandpush\algorithmicif\ #1\ \algorithmicthen}
+  {\popandprint\algorithmicend\ \algorithmicif}%
+\algdef{C}[IF]{IF}{ElsIf}[1]
+  {\popandprint\pushindent\algorithmicelse\ \algorithmicif\ #1\ \algorithmicthen}%
+\algdef{Ce}[ELSE]{IF}{Else}{EndIf}
+  {\popandprint\pushindent\algorithmicelse}%
+\algdef{SE}[PROCEDURE]{Procedure}{EndProcedure}[2]
+   {\printandpush\algorithmicprocedure\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
+   {\popandprint\algorithmicend\ \algorithmicprocedure}%
+\algdef{SE}[FUNCTION]{Function}{EndFunction}[2]
+   {\printandpush\algorithmicfunction\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
+   {\popandprint\algorithmicend\ \algorithmicfunction}%
+\makeatother
+
+%%%% fiddling with lists:
+% \usepackage{enumitem}
+% try: \begin{description}[leftmargin=\parindent,labelindent=\parindent] ...
+
+%%%% FONTS
+
+\usepackage{inconsolata}
+% \usepackage[defaultsans]{droidsans}
+\usepackage[sfdefault,light,condensed]{roboto}
+% \renewcommand*\ttdefault{cmvtt} % use with roboto condensed
+% \usepackage[sfdefault]{universalis}
+% \usepackage[default]{lato}
+% \usepackage{lmodern}
+% \usepackage{paratype}
+% \usepackage{cmbright}
+% \usepackage[default,osfigures,scale=0.95]{opensans}
+\usepackage{sfmath}
+\renewcommand*\familydefault{\sfdefault}
+\usepackage[T1]{fontenc}
+
+% special \vneq that works with sfmath
+\makeatletter
+\newcommand*{\vneq}{%
+  \mathrel{%
+    \mathpalette\@vneq{=}%
+  }%
+}
+\newcommand*{\@vneq}[2]{%
+  % #1: math style (\displaystyle, \textstyle, ...)
+  % #2: symbol (=, ...)
+  \sbox0{\raisebox{\depth}{$#1\neq$}}%
+  \sbox2{\raisebox{\depth}{$#1|\m@th$}}%
+  \ifdim\ht2>\ht0 %
+    \sbox2{\resizebox{\vneqxscale\width}{\vneqyscale\ht0}{\unhbox2}}%
+  \fi
+  \sbox2{$\m@th#1\vcenter{\copy2}$}%
+  \ooalign{%
+    \hfil\phantom{\copy2}\hfil\cr
+    \hfil$#1#2\m@th$\hfil\cr
+    \hfil\copy2\hfil\cr
+  }%
+}
+\newcommand*{\vneqxscale}{1}
+\newcommand*{\vneqyscale}{.8}
+\makeatother

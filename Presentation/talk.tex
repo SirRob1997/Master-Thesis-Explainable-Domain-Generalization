@@ -1,0 +1,146 @@
+\documentclass[10pt,usepdftitle=false,aspectratio=169]{beamer}
+
+\input{preamble_talk}
+
+\usetikzlibrary{external}
+%\tikzexternalize[mode=list and make]
+% use  make -j 8 -f talk.makefile to compile with 8 parallel threads (this is what it takes to max out the machine, depsite it having 4 cores)
+%\tikzset{external/force remake=false}
+%\tikzsetexternalprefix{fig/external/}
+
+\begin{document}
+
+\tikzexternaldisable
+\begin{frame}
+  \title{{\bf Prototype Networks for Domain Generalization}\newline Recap and next possible steps
+  \vspace*{-.7cm}}
+  \author{Robin M. Schmidt \vspace{-1cm}} \date{15 May 2020}
+
+  \vspace{-1.5cm}
+  \maketitle 
+  \vspace{-1.0cm}
+
+  \begin{center}
+      \includegraphics[width=0.4\textwidth]{assets/UT_WBMW_Rot_RGB.pdf}
+  \end{center}
+
+  \thispagestyle{empty}
+  \setcounter{framenumber}{0}
+
+  %%%%%%%%%%%%%%%% ANIMATED LOGO %%%%%%%%%%%%%%%%
+  \tikzifexternalizing{}{%
+  \begin{tikzpicture}[remember picture,overlay]
+  \node[anchor=south,yshift=-2mm] at (current page.south) 
+  {\animategraphics[width=0.9995\paperwidth,autoplay,loop]{36}{assets/logo_TU_169_}{0}{39}};
+    \end{tikzpicture}%
+  }%
+  % if you don't like the animation or it doesn't work for you, use this here instead:
+%   \includegraphics[width=0.9995\paperwidth]{assets/logo_TU_169_0.pdf}
+  %%%%%%%%%%%%%% END OF ANIMATED LOGO %%%%%%%%%%%
+
+\end{frame}
+\tikzexternalenable
+
+\setlength{\figwidth}{.9\textwidth}
+\setlength{\figheight}{.6\textheight}
+
+%  \begin{frame}\frametitle{title}
+%      \framesubtitle{subtitle}
+
+%  \begin{itemize}
+%   \item items
+%   \item more items
+%  \end{itemize}
+
+%  \begin{block}{Block title}
+%  a block
+%  \end{block}
+
+%  \ribbon{a ribbon across the page (for big takeaways).}
+
+%  \end{frame}
+
+%  \blackslidetext{This is a black slide for summaries or take-aways while the next slide is to draw attention to the speaker since there is no visual input for the listeners}
+%  %\blackslide
+
+\begin{frame}{Model overview}
+\framesubtitlecite{Current Model Architecture}{\cite{ChenLTBRS19}}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.15,trim={2.5cm 26cm 2.5cm 0},clip]{fig/architecture-1.png}
+    \label{fig:my_label}
+\end{figure}
+\ribbon{To be precise, there are $2$ convolutional layers, a ReLU, and a Sigmoid between $f$ and $g_p$}
+\end{frame}
+
+\begin{frame}{Model overview}
+\framesubtitlecite{Current Losses}{\cite{ChenLTBRS19}}
+Each class has a pre-specified number of prototypes e.g. $10$:
+\vspace{0.3cm}
+\begin{itemize}
+    \item \emph{Cross Entropy:} For Classification Error
+    \begin{equation}
+        \operatorname{CrsEnt}\left(h \circ g_{\mathbf{p}} \circ f\left(\mathbf{x}_{\mathbf{i}}\right), \mathbf{y}_{\mathbf{i}}\right)
+    \end{equation}
+    \item \emph{Cluster Loss:}  Each training image should have a latent patch that is close to at least one prototype of its own class
+    \begin{equation}
+\text { Clst }=\frac{1}{n} \sum_{i=1}^{n} \min _{j: \mathbf{p}_{j} \in \mathbf{P}_{y_{i}}} \min_{\mathbf{z} \in \text { patches }\left(f\left(\mathbf{x}_{i}\right)\right)}\left\|\mathbf{z}-\mathbf{p}_{j}\right\|_{2}^{2}
+\end{equation}
+\item \emph{Separation loss:}
+Every latent patch of a training image should stay away from the prototypes not of its own class
+\begin{equation}
+\text { Sep }=-\frac{1}{n} \sum_{i=1}^{n} \min _{j: \mathbf{p}_{j} \notin \mathbf{P}_{y_{i}}} \min_{\mathbf{z} \in \text{patches}\left(f\left(\mathbf{x}_{i}\right)\right)}\left\|\mathbf{z}-\mathbf{p}_{j}\right\|_{2}^{2}
+\end{equation}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Current Training}
+    Initialize the weights of fully connected layer with $w=1$ for prototypes of the corresponding class and $w=-0.5$ for the others.
+    \begin{figure}
+    \centering
+    \includegraphics[scale=0.2,trim={2.5cm 20cm 2.5cm 0},clip]{fig/training1.png}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Current Training}
+    Train \emph{only} prototype layer for warmup period of $100$ steps:
+    \begin{figure}
+    \centering
+    \includegraphics[scale=0.2,trim={2.5cm 20cm 2.5cm 0},clip]{fig/training2.png}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Current Training}
+    Train the featurizer and the prototype layer jointly for the rest of the epochs:
+    \begin{figure}
+    \centering
+    \includegraphics[scale=0.2,trim={2.5cm 19.5cm 2.5cm 0},clip]{fig/training3.png}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Next Steps}
+This already achieves \emph{good performance}, next steps to think about:
+\vspace{0.3cm}
+\begin{itemize}
+    \item Final tuning of the fully connected layer to stop ``negative'' reasoning process as done in \cite{ChenLTBRS19}:
+    \begin{equation}
+\min _{w_{h}} \frac{1}{n} \sum_{i=1}^{n} \operatorname{CrsEnt}\left(h \circ g_{\mathbf{p}} \circ f\left(\mathbf{x}_{\mathbf{i}}\right), \mathbf{y}_{\mathbf{i}}\right)+\lambda \sum_{k=1}^{K} \sum_{j: \mathbf{p}_{j} \notin \mathbf{P}_{k}}\left|w_{h}^{(k, j)}\right|
+\end{equation}
+    \uncover<2->{\item Add a loss term to enforce that different prototypes for one class are not focusing on the same latent patch (e.g.~Cosine Similarity + ReLU / Jensen-Shannon Divergence / any other distance)}
+    \uncover<3->{\item Make use of domain information (We should discuss this)}
+    \uncover<4->{\item Self-Challenging based on the Top-p closest patches to prototypes}
+    \uncover<5->{\item Visualization: \cite{ChenLTBRS19} use the closest image patch, there are other works which use a decoder \cite{LiLCR18}, or another approach \cite{aralajewHRAV19}.}
+    \uncover<6->{\item Explore different distance metrics besides $L^2$ (Bregman Divergences \cite{BanerjeeMDG04})}
+\end{itemize}
+    
+\end{frame}
+
+\begin{frame}[allowframebreaks]{References}
+    \bibliographystyle{apalike}
+    \bibliography{01_bibliography}
+\end{frame}
+
+\end{document}

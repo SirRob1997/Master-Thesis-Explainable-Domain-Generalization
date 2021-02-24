@@ -1,5 +1,7 @@
 \chapter{Proposed Methods}
 
+In order to apply some of the previously mentioned topics from the explainability literature to the domain generalization task,  we specifically investigate the usage of gradient class activation maps from \Cref{sec:CAMs}, as well as prototypes from \Cref{sec:prototypes}. Our methods which are based upon these approaches are respectively described in \Cref{sec:divcam} (\divcam) and \Cref{sec:prototype_networks} (\prodrop). 
+
 \section{Diversified Class Activation Maps (\divcam)}
 \label{sec:divcam}
 
@@ -121,15 +123,15 @@ After weighting, we can sum up all the losses and add it to our overall loss, we
 \label{eq:adv}
 \mathcal{L}_{adv} =\mathcal{L}_{ce}(\mathbf{y}, w(\Tilde{\mathbf{z}}))+\lambda_2 ( \mathcal{L}_{ce}(\mathbf{d}, \omega(\boldsymbol{M})) + \eta \left\|\nabla_{\boldsymbol{M}} \mathcal{L}_{ce}(\mathbf{d}, \omega(\boldsymbol{M}))\right\|_2).
 \end{equation}
-During each training step, we either update the discriminator, \ie the predictor for the domain, or the generator, \ie the main network including featurizer and classifier. The discriminator loss inherently includes a l2 penalty on the gradients, weighted by $\eta$.
+During each training step, we either update the discriminator, \ie the predictor for the domain, or the generator, \ie the main network including featurizer and classifier. The discriminator loss inherently includes a $L^2$ penalty on the gradients, weighted by $\eta$.
 
 
 \subsection{Maximum Mean Discrepancy}
 
-Given two samples $\mathbf{x}^{\xi_1}$ and $\mathbf{x}^{\xi_2}$ drawn from two individual, unknown  domain distributions $\mathcal{D}_{\xi_1}$ and $\mathcal{D}_{\xi_2}$, the maximum mean discrepancy (MMD) is given by \Cref{eq:mmd_maps} where $\varphi: \mathbb{R}^{d} \rightarrow \mathcal{H}$ is a feature map and $k(\cdot, \cdot)$ is the kernel function induced by $\varphi(\cdot)$. We consider every distinct pair of source domains $(\xi_u, \xi_v)$, representing training domains $\xi_u$ and $\xi_v$, with $\xi_u\neq \xi_v$ to be in the set $\Gamma$.
+Given two samples $\mathbf{x}^{\xi_1}$ and $\mathbf{x}^{\xi_2}$ drawn from two individual, unknown  domain distributions $\mathcal{D}_{\xi_1}$ and $\mathcal{D}_{\xi_2}$, the maximum mean discrepancy (MMD) is given by \Cref{eq:mmd_maps} where $\varphi: \mathbb{R}^{d} \rightarrow \mathcal{H}$ is a feature map and $k(\cdot, \cdot)$ is the kernel function induced by $\varphi(\cdot)$. We consider every distinct pair of source domains $(\xi_u, \xi_v)$, representing training domains $\xi_u$ and $\xi_v$, with $\xi_u\neq \xi_v$ to be in the set $\mathfrak{P}$.
 \begin{equation}
 \label{eq:mmd_maps}
-    \mathcal{L}_{dist} =\sum_{\xi_u,\xi_v \in \Gamma}\left\|\mathbb{E}_{\mathbf{x}^{\xi_u} \sim \mathcal{D}_{\xi_u}}[\varphi(\mathbf{x}^{\xi_u})]-\mathbb{E}_{\mathbf{x}^{\xi_v} \sim \mathcal{D}_{\xi_v}}[\varphi(\mathbf{x}^{\xi_v})]\right\|_{\mathcal{H}}
+    \mathcal{L}_{dist} =\sum_{\xi_u,\xi_v \in \mathfrak{P}}\left\|\mathbb{E}_{\mathbf{x}^{\xi_u} \sim \mathcal{D}_{\xi_u}}[\varphi(\mathbf{x}^{\xi_u})]-\mathbb{E}_{\mathbf{x}^{\xi_v} \sim \mathcal{D}_{\xi_v}}[\varphi(\mathbf{x}^{\xi_v})]\right\|_{\mathcal{H}}
 \end{equation}
 In simpler terms, we map samples into a reproducing kernel Hilbert space $\mathcal{H}$, and compute their mean differences within the RKHS. This loss pushes samples from different domains, which represent the same class, to lie nearby in the embedding space. According to \citet{SriperumbudurFGLS09}, this mean embedding is injective, \ie arbitrary distributions are uniquely represented in the RKHS, if we use a characteristic kernel. For this work, we choose the gaussian kernel shown in \Cref{eq:gaussian_kernel} which is a well-known characteristic kernel.
 \begin{equation}
@@ -149,7 +151,7 @@ Another approach to combine explainability methods with the task of domain gener
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth, height=5cm]{Figures/img-placeholder.png}
+    \includegraphics[width=\textwidth]{Figures/Chapter4/prototype_agnostic-cropped.pdf}
     \caption{Domain-agnostic Prototype Network}
     \label{fig:domain_prototype_network}
 \end{figure*}
@@ -166,7 +168,7 @@ There exist multiple strategies for setting the aggregation weights during this 
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth, height=5cm]{Figures/img-placeholder.png}
+    \includegraphics[width=\textwidth]{Figures/Chapter4/prototype_ensemble-cropped.pdf}
     \caption{Ensemble Prototype Network}
     \label{fig:ensemble_prototype_network}
 \end{figure*}
@@ -182,8 +184,9 @@ where $\prots_{\yyi}^\env$ denotes the prototypes associated with the specific c
 While all of these ensemble variants \emph{should} work given the intuition from previous works that have been using model ensembles for learned domain-specific latent spaces, we observe that these assumptions do \emph{not} hold for prototype networks based on our additional experiments of the proposed variants. For us, any prototype ensemble was consistently outperformed by one domain-agnostic prototype layer. 
 
 \subsection{Diversified Prototypes (\prodrop)}
+\label{sec:divpro}
 
-To improve upon the domain-agnostic prototype layer, we analyze the best performing hyperparameters (oracle-validation) for their learned, pairwise prototype $\ell_2$-distance as well as the cosine distance $\cdistance$ which for any two prototypes $\prot$ and $\proti_i$ are given by:
+To improve upon the domain-agnostic prototype layer, we analyze the best performing hyperparameters (oracle-validation) for their learned, pairwise prototype $\ell_2$-distance as well as the cosine distance $\cdistance$ which for any two prototypes $\proti_i$ and $\prot$ are given by:
 \begin{alignat}{3}
 \label{eq:pairwise_prot_distances}
     &\ell_2 &&= &&\left\|\proti_i - \prot  \right\|_2\\ 
@@ -202,7 +205,7 @@ Through the $\ell_2$-distance we can grasp the euclidean distance between any tw
 
 The results of this analysis can be seen in \Cref{fig:pairwise_distance} and \Cref{fig:pairwise_distance_sc} for the first data split and a negative weight of $w_{c,j} = -1.0\; \forall j: \prot \notin \prots_c$ but we also show the same plots for $w_{c,j} = 0.0$ and the two additional data splits in \Cref{sec:additional_distances}. As both of the used metrics are symmetric, only the upper triangle is visualized. We observe that depending on the data split and negative weight, the model sometimes converges to having one or two prototypes per class that have a large $\ell_2$ distance while many of the other prototypes are close. Striking examples for this behavior can be seen in \Cref{fig:pairwise_distance} for the sketch domain or in \Cref{fig:pw_distance_trial1} for the sketch and cartoon domain. This observation suggests, that in these scenarios the model fails to properly use all of the available prototypes and only relies on a significantly reduced subset per class, not training the other prototypes. In relation to the cosine distance, however, we can often observe that exactly these prototypes with a high pairwise $\ell_2$-distance to all the other prototypes have a slightly lower cosine distance. Such behavior can be seen for example in \Cref{fig:pairwise_distance} in the art and cartoon environment or in \Cref{fig:pw_distance_trial1} for the sketch and cartoon domain. For the most part, many cosine distances tend to be low and more or less uniformly spaced. Nevertheless, we can occasionally identify ``streaking'' patterns in the cosine distances where prototypes for certain classes are well-spaced but they have a larger (or equal) cosine distance to prototypes of other classes. See for example \Cref{fig:pairwise_distance} for the sketch domain, \Cref{fig:pw_distance_0.0_trial1} for the sketch and photo domain, and \Cref{fig:pw_distance_0.0_trial2}  for the sketch and cartoon domain.
 
-From a design standpoint, we would like the prototypes within each class to be reasonably well spaced out in the latent space such that they can resemble different discriminiative attributes about each class. That is, we would like the network to utilize all the prototypes and not only rely on a small subset of prototypes or discriminiative features for their prediction. The distances of these prototypes to the prototypes of the other classes, however, should \emph{not} be restrained in any way and should be learned automatically. For example, when predicting different bird species, this allows the network to place similar head prototypes of different classes closer together. The existing cluster and separation losses enforce that each prototype associated with that class is close to at least one latent patch of that class while maximizing the distance to the prototypes of other classes. However, this does not enforce that each prototype associated with that class acts on a different discriminative feature.
+From a design standpoint, we would like the prototypes within each class to be reasonably well spaced out in the latent space such that they can resemble different discriminative attributes about each class. That is, we would like the network to utilize all the prototypes and not only rely on a small subset of prototypes or discriminative features for their prediction. The distances of these prototypes to the prototypes of the other classes, however, should \emph{not} be restrained in any way and should be learned automatically. For example, when predicting different bird species, this allows the network to place similar head prototypes of different classes closer together. The existing cluster and separation losses enforce that each prototype associated with that class is close to at least one latent patch of that class while maximizing the distance to the prototypes of other classes. However, this does not enforce that each prototype associated with that class acts on a different discriminative feature.
 
 One approach to possibly enforce this behavior is to incorporate the self-challenging method previously applied to \divcam to the presented prototype network resulting in a novel algorithm we call \emph{prototype dropping} (\prodrop) which is described in \Cref{alg:ProDrop}. In essence, we extract features by passing our input images to the featurizer $\mathbf{z} = \phi(\mathbf{x})$ and compute the similarity scores for each prototype by passing it to the prototype layer $\unit(\zz)$ with \Cref{eq:prot_layer_function}. Based on these similarity scores, we compute a mask $\mathbf{m}_{c,j}$ for the prototypes of the respective class with the highest activation:
 \begin{equation}
@@ -257,8 +260,35 @@ where the $\ell_2$-distance and the cosine distance are weighted equally. Since 
 
 Even though we experimented with different weighting of the individual distance metrics as well as the overall loss, we observed no \emph{consistent} performance improvements on top of self-challenging across testing environments and data splits. The observations from \Cref{sec:intra_loss}, \Cref{fig:pw_distance_trial1-sc}, and \Cref{sec:additional_distances} suggest that self-challenging inherently already enforces the desired properties up to the near-optimal extent such that the additional loss term does not provide any consistent further benefits.
 
-\subsection{Influence of the negative weight on the distance metrics}
-We also analyze the discrepancies between the distance metrics when comparing $w_{c,j} = -1.0\; \forall j: \prot \notin \prots_c$ and $w_{c,j} = 0.0\; \forall j: \prot \notin \prots_c$ which can be seen in the figures presented in \Cref{sec:additional_distances}. However, from these plots there were no \emph{consistent} trends observable which can be made  
+\paragraph{Influence of the negative weight on the distance metrics}
+We also analyze the discrepancies between the distance metrics when comparing $w_{c,j} = -1.0\; \forall j: \prot \notin \prots_c$ and $w_{c,j} = 0.0\; \forall j: \prot \notin \prots_c$ which can be seen in the figures presented in \Cref{sec:additional_distances}. However, from these plots there were no \emph{consistent} trends observable which can be made on how the negative weight influences the training behavior of the prototypes. 
+
+\subsection{Using Support Sets (\dtransformers)}
+
+Instead of directly learning the set of prototypes $\prots$, we can rely on a support set similar to what is done by \citet{DoerschGZ20} or \citet{SnellSZ17}. Here, the prototypes are based on a support set $\support$ consisting of $n_c$ sample images $\xxi$. This support set exists for each of the classes $c$ as $\supportc = \{\xxic\}_{i=1}^{n_c}$ where $\xxic$ is an image from class $c$. In the classical setting, the set of prototypes for each class $\prots_c$ is then obtained by computing one prototype for each class $\protc$ averaging the average-pooled latent representations of the support set as:
+\begin{equation}
+    \protc = \frac{1}{|\prots_c|} \sum_{\xxic \in \supportc} \featureex(\xxic)
+\end{equation}
+Contrary to the previous approach, by averaging all the average-pooled latent representations, there exists only one prototype for each class \ie $|\prots_c| = 1$ and $j=1$ which loses spatial information. Predictions are again made by computing \emph{some} distance function between the prototypes and the latent representation of the image to be classified. \citet{DoerschGZ20} preserve this spatial information of the featurizer and use the attention weights to guide the averaging across support set images and latent patches in a method that they call crossTransformers. We extend their approach for the domain generalization case here, where we compute attention across multiple training environments. In the following sections this adaptation is referenced as \dtransformers. 
+
+In particular, similar to Transformers \citep{VaswaniSPUJGKP17} and the original work by \citet{DoerschGZ20}, we use three linear transformations to compute keys, values, and queries. In practice, the key head $\keyh : \mathbb{R}^{K} \mapsto \mathbb{R}^{\dimkey}$, the value head $\valueh : \mathbb{R}^{K} \mapsto \mathbb{R}^{\dimvalue}$, and the query head $\queryh : \mathbb{R}^{K} \mapsto \mathbb{R}^{\dimkey}$  can each be implemented through convolutions with \texttt{kernel\_size = 1}. Prototypes for each domain are computed by passing the support set $\supportc^\env = \{\xxic^\env\}_{i=1}^{n_{\env, c}}$ associated with domain $\env$ and class $c$ through the featurizer. For each spatial location $m$ in the resulting features (indexed over $H_\mathbf{z} \times W_\mathbf{z}$) of the support set image $i$, we compute dot-product attention scores between keys $\keys = \keyh (\featureex(\xxic^\env))_m$ and the query vectors $\queries = \queryh(\featureex(\xxq^\env))_p$ for a query image $\xxq$ at spatial location $p$ (indexed over $H_\mathbf{z} \times W_\mathbf{z}$). Explicitly, the dot similarity $\attentionw$ between them is computed as:
+\begin{equation}
+    \attentionw = \keys \cdot \queries.
+\end{equation}
+Afterwards, we re-scale this dot similarity by using $\scaler=\sqrt{\dimkey}$ and obtain the final attention weights $\attentionwf$ using a \texttt{softmax} operation summing over all spatial locations and images in the support set:
+\begin{equation}
+    \attentionwf = \frac{\exp(\attentionw / \scaler)}{\sum_{i,m} \exp(\attentionw / \scaler)}.
+\end{equation}
+Finally, we can use the support-set values $\values = \valueh(\featureex(\xxic^\env))_m$  with the attention weights to compute a prototype vector per spatial location $p$ for each domain and class:
+\begin{equation}
+    \protipc = \sum_{i,m} \attentionwf \values.
+\end{equation}
+As a distance, we compute the dot similarity between the prototype and the query image values $\valuesq = \valueh(\featureex(\xxic^\env))_m$ where we sum over the training environments $\env \in \envs$ and the spatial locations $p$ of the query image:
+\begin{equation}
+    d(\xxic, \supportc) = \sum_{\env \in \envs} \frac{1}{H_\mathbf{z} W_\mathbf{z}} \sum_p \protipc \cdot  \valuesq.
+\end{equation}
+Most notably, we deploy the dot similarity as a distance metric here instead of the squared $\ell^2$-norm used by \citet{DoerschGZ20} since we observed numerical instability for that in our experiments which might be due to the distribution shift in domain generalization. In their work, they reason about using the same value-head $\valueh$ for the queries as used on the support-set images to ensure that the architecture works as a distance \ie if the support set contains the same images as the query, they want the euclidean distance to be $0$ \citep{DoerschGZ20}. Since we observed no performance gains for keeping them separate, we also use the same value head $\valueh$ for both the queries and support set images to reduce additional parameters to a minimum.
+
 
 \section{Experiments}
 In an effort to improve comparability and reproducability, we use \domainbed \citep{gulrajani2020search} for all ablation studies and experimental results. We compare to all methods currently in \domainbed which includes our provided implementation of \rsc. Further, all experiments show results for both \emph{training-domain validation} which assumes that training and testing domains have similar distributions  and \emph{oracle validation} which has limited access to the testing domain which have been introduced in \Cref{sec:considerations}.
@@ -267,68 +297,23 @@ In an effort to improve comparability and reproducability, we use \domainbed \ci
 Since the size of the validation dataset can have a heavy impact on performance, we follow the design choices of \domainbed and choose $20\%$ of each domain as the validation size for all experiments and ablation studies. Here, we present results for VLCS \citep{FangXR13}, PACS \citep{LiYSH17}, Office-Home \citep{VenkateswaraECP17}, Terra Incognita \citep{BeeryHP18}, and DomainNet \citep{PengBXHSW19}. Although sometimes disregarded in the body of literature for domain generalization, we provide results for three different dataset splits to assess the stability regarding the model selection and to avoid overfitting on one split. 
 
 \subsection{Hyperparameter Distributions \& Schedules}
-\label{sec:abl-distr}
-For the mask batching ablation study we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask-batching}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is always scheduled with a step-decay which decays the learning rate by factor $0.1$ at epoch $80/100$.
-\begin{table}[!htbp]
-    \centering
-    \begin{tabular}{lll}
-        \toprule
-         & \textbf{Hyperparameter} & \textbf{Distribution} \\
-        \midrule
-        $\alpha$ & learning rate & $\loguni{-5}{-1}$ \\
-        $\mathcal{B}$ & batch size  & $\floor{\logunitwo{3}{9}}$ \\
-        $\gamma$ & weight decay  & $\loguni{-6}{-2}$ \\
-        $p$ & feature drop factor  & $1/3$ \\
-        $b$ & batch drop factor  & $\uni{0}{1}$ \\
-         \bottomrule 
-    \end{tabular}
-    \caption[Hyperparameters and distributions used for the mask batching ablation study]{Hyperparameters and distributions used in random search for the mask batching ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor{\cdot}$ is the floor operator.}
-    \label{tab:abl-distributions-mask-batching}
-\end{table}
+For the main results, we use the official \domainbed hyperparameter distributions as well as the \adam optimizer with no learning rate schedule. This corresponds to the setup in which all baselines from \Cref{tab:perfom} have been evaluated in by \citet{gulrajani2020search} to provide a fair comparison. For the hyperparameters which get introduced in our methods, we choose similar distributions as used in the ablation studies from \Cref{sec:ablation}. Furhter, \Cref{sec:ablation} also shows the official distributions of \domainbed for all other shared hyperparameters such as learning rate $\alpha$ or batch size $\mathcal{B}$.
 
-For the mask ablation study, we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is \emph{not} scheduled. This corresponds to the tuning distributions provided in \domainbed which are also used for all the main results.
-\begin{table}[!htbp]
-\small
-    \centering
-    \begin{tabular}{lll}
-        \toprule
-        & \textbf{Hyperparameter} & \textbf{Distribution} \\
-        \midrule
-        $\alpha$ & learning rate & $\loguni{-5}{-3.5}$ \\
-        $\mathcal{B}$ & batch size  & $\floor{\logunitwo{3}{5.5}}$ \\
-        $\gamma$ & weight decay  & $\loguni{-6}{-2}$ \\
-        $p$ & feature drop factor  & $\uni{0.2}{0.5}$ \\
-        $b$ & batch drop factor  & $\uni{0}{1}$ \\
-        $\lambda_1$ & hnc factor & $\loguni{-3}{-1}$ \\
-        $k$ & negative classes & $\mathrm{num\_classes} - 1$ \\
-        $\theta_{tap}$ & tap factor & $\uni{0}{1}$ \\
-        $\lambda_2$ & adversarial factor & $\loguni{-2}{2}$ \\
-        $s$ &disc per gen step & $\floor{\logunitwo{0}{3}}$ \\
-        $\eta$ & gradient penalty & $\loguni{-2}{1}$ \\
-        $\omega_s$ & mlp width & $512$ \\
-        $\omega_d$ & mlp depth & $3$ \\
-        $\omega_{dr}$ & mlp dropout & $0.5$ \\
-        $\lambda_3$ & mmd factor & $\loguni{-1}{1}$ \\
-        \bottomrule 
-    \end{tabular}
-    \caption[Hyperparameters and distributions used for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$, $\floor{\cdot}$ is the floor operator, and $[\cdot]$ represents a choice.}
-    \label{tab:abl-distributions-mask}
-\end{table}
-
-If not marked otherwise, each experiment evaluates $20$ hyperparameter samples, similar to what is suggested in \domainbed.
 
 \section{Results}
 
-The high-level results for \divcams inside the \domainbed framework and across datasets are shown in \Cref{tab:perfom}. For completeness, we also show results outside of \domainbed on the official PACS split in \Cref{tab:official} using a ResNet-18 backbone. The full results, including the performance for choosing any domain inside each dataset as a testing domain, are shown in \Cref{sec:DomainResults}. While we are able to achieve state-of-the-art performance outside of the \domainbed framework, utilizing learning rate schedules and hyperparameter fine-tuning, we are also able to achieve Top-$4$ performance across five datasets within \domainbed. Notably, we outperform \rsc in almost every scenario, while exhibiting less standard deviation. This leads to more stable results and a more suitable method which can easily be used as a plug-and-play approach. 
+The high-level results for \divcams inside the \domainbed framework and across datasets are shown in \Cref{tab:perfom}. For completeness, we also show results outside of \domainbed on the official PACS split in \Cref{tab:official} using a ResNet-18 backbone. The full results, including the performance for choosing any domain inside each dataset as a testing domain, are shown in \Cref{sec:DomainResults}. While we are able to achieve state-of-the-art performance outside of the \domainbed framework, utilizing learning rate schedules and hyperparameter fine-tuning, we are also able to achieve Top-$4$ performance across five datasets within \domainbed. Notably, we outperform \rsc in almost every scenario, while exhibiting less standard deviation. This leads to more stable results and a more suitable method which can easily be used as a plug-and-play approach. In comparison with all other methods, we achieve good performance for the two most challenging datasets, namely Terra Incognita (Top-2) and DomainNet (Top-4), outperforming \rsc for both datasets by up to 2\%. This suggests, that directly reconstructing to Grad-CAMs in \divcams specifically provides value for the more challenging datasets in \domainbed. Keep in mind, that this is possible \emph{without} adding any additional parameters and while providing a framework where intermediate class activation maps can be visualized that guide the networks training process. While this might not be the \emph{best} explainability method, it certainly can offer more insights than  treating the optimization procedure as a block-box without this guidance.
 
-The fact that we are able to achieve state-of-the-art results for \divcams \emph{outside} of \domainbed shows a common problem with works in domain generalization, namely consistency in algorithm comparisons and reproducability. Due to computational constraints, novel methods are often only compared to the results provided in previous works. As a result, details such as the hyperparameter tuning procedure, learning rate schedules, or even the optimizer are often omitted or chosen to fit the algorithm at hand. From some of our experiments, we observe that simply fine-tuning a learning rate schedule for any of the methods offers a bigger performance increase than choosing a better algorithm in the first place. As such, design choices can have a heavy impact on how well the algorithm performs. Having a common benchmarking procedure such as \domainbed, where these are fixed, is necessary to make \emph{substantial} progress in this field. We hope that we can push adoption in the community with our addition of \rsc and \divcam. 
+The fact that we are able to achieve state-of-the-art results for \divcams \emph{outside} of \domainbed shows a common problem with works in domain generalization, namely consistency in algorithm comparisons and reproducability. Due to computational constraints, novel methods are often only compared to the results provided in previous works. As a result, details such as the hyperparameter tuning procedure, learning rate schedules, or even the optimizer are often omitted or chosen to fit the algorithm at hand. From some of our experiments, we observe that simply fine-tuning a learning rate schedule for any of the methods from \Cref{tab:perfom} offers a bigger performance increase than choosing a better algorithm in the first place. As such, design choices can have a heavy impact on how well the algorithm performs. Having a common benchmarking procedure such as \domainbed, where these are fixed, is necessary to make \emph{substantial} progress in this field. We hope that we can push adoption in the community with our addition of \rsc and the methods proposed in this work. However, not using learning rate schedules and following the pre-defined distributions for learning rates, batch sizes, or weight decays might inherently bias this comparison and shouldn't be neglected as a factor.  
+
+On top of that, \Cref{tab:perfom} also shows the results for \dtransformers. Generally, we observed that many variants of the prototype based approaches outlined in \Cref{sec:prototypes} fail to generalize well to ResNet-50, even though they exhibit promising performance on ResNet-18 (see \Cref{tab:intrabl} for \prodrop results on PACS and ResNet-18). This might be due to the fact that prototypical approaches commonly require higher resolution feature maps \eg $14\times14$ in \citep{DoerschGZ20} via dilated convolutions. Nevertheless, \dtransformers already perform quite well for the benchmarking procedure outlined by \domainbed even without these additional changes. Keeping in mind that these adaptions can be made to push the performance even more, makes the approach even more suited for domain generalization although it is unclear how much the other algorithms would benefit from such a change. The value of prototypical approaches does not only lie in good performance but any prototypical approach can also offer a significant amount explainability since these allow for visualizing the prototype similarity maps, the closest image patches to the prototypes, or even directly the prototypes if a sufficient decoder has jointly been trained. With this in mind, the 
 
 \begin{table*}[t]
 \footnotesize
 \centering
 \begin{tabular}{llcccccc}
 \toprule
-\textbf{Algorithm}  & \textbf{Ref.}       & \textbf{VLCS}             & \textbf{PACS}             & \textbf{Office-Home}       & \textbf{Terra Incognita}   & \textbf{DomainNet}        & \textbf{Avg.}              \\
+\textbf{Algorithm}  & \textbf{Ref.}       & \textbf{VLCS}             & \textbf{PACS}             & \textbf{Office-Home}       & \textbf{Terra Inc.}   & \textbf{DomainNet}        & \textbf{Avg.}              \\
 \midrule
 ERM                       & \citep{vapnik1998statistical}            & 77.5 $\pm$ 0.4            & 85.5 $\pm$ 0.2            & 66.5 $\pm$ 0.3            & 46.1 $\pm$ 1.8            & 40.9 $\pm$ 0.1            & 63.3                     \\
 IRM                       & \citep{arjovsky2019invariant}             & 78.5 $\pm$ 0.5            & 83.5 $\pm$ 0.8            & 64.3 $\pm$ 2.2            & 47.6 $\pm$ 0.8            & 33.9 $\pm$ 2.8            & 61.5                      \\
@@ -345,6 +330,7 @@ ARM                       & \citep{zhang2020adaptive}           & 77.6 $\pm$ 0.3
 VREx                      & \citep{krueger2020outofdistribution}            & 78.3 $\pm$ 0.2            & 84.9 $\pm$ 0.6            & 66.4 $\pm$ 0.6            & 46.4 $\pm$ 0.6            & 33.6 $\pm$ 2.9            & 61.9                      \\
 RSC  		& \citep{huang2020selfchallenging}	      & 77.1 $\pm$ 0.5            & 85.2 $\pm$ 0.9            & 65.5 $\pm$ 0.9             & 46.6 $\pm$ 1.0           & 38.9 $\pm$ 0.5             & 62.7                      \\
 \divcams               & (ours)            &77.8 $\pm$ 0.3            & 85.4 $\pm$ 0.2             & 65.2 $\pm$ 0.3           & 48.0 $\pm$ 1.2             & 40.7  $\pm$ 0.0    & 63.4                    \\
+\dtransformers & (ours) & $78.7 \pm 0.5$  & $84.2 \pm 0.1$ & & & & \\
 \midrule
 ERM*           &   \citep{vapnik1998statistical}               	  & 77.6 $\pm$ 0.3            & 86.7 $\pm$ 0.3            & 66.4 $\pm$ 0.5            & 53.0 $\pm$ 0.3            & 41.3 $\pm$ 0.1            & 65.0                      \\
 IRM*             &    \citep{arjovsky2019invariant}             	  & 76.9 $\pm$ 0.6            & 84.5 $\pm$ 1.1            & 63.0 $\pm$ 2.7            & 50.5 $\pm$ 0.7            & 28.0 $\pm$ 5.1            & 60.5                      \\
@@ -361,7 +347,7 @@ ARM*                  &   \citep{zhang2020adaptive}           		& 77.8 $\pm$ 0.3
 VREx*                 &    \citep{krueger2020outofdistribution}       	  & 78.1 $\pm$ 0.2            & 87.2 $\pm$ 0.6            & 65.7 $\pm$ 0.3            & 51.4 $\pm$ 0.5            & 30.1 $\pm$ 3.7            & 62.5                      \\
 RSC*  		& \citep{huang2020selfchallenging}	       & 77.8 $\pm$ 0.6            & 86.2 $\pm$ 0.5            & 66.5 $\pm$ 0.6            & 52.1 $\pm$ 0.2            & 38.9 $\pm$ 0.6             & 64.3                      \\
 \tdivcams              & (ours) & 78.1 $\pm$ 0.6            & 87.2 $\pm$ 0.1            & 65.2 $\pm$ 0.5             & 51.3 $\pm$ 0.5           & 41.0 $\pm$ 0.0             & 64.6                      \\
-
+\tdtransformers & (ours) & $77.7 \pm 0.1$ & $86.9 \pm 0.3$ & & & & \\
 \bottomrule
 \end{tabular}
 \caption[Performance comparison across datasets]{Performance comparison across datasets using training-domain validation (top) and  oracle validation denoted with * (bottom). We use a ResNet-50 backbone, optimize with \adam, and follow the distributions specified in \domainbed.}
@@ -392,6 +378,59 @@ RSC*  		& \citep{huang2020selfchallenging}	       & 77.8 $\pm$ 0.6            & 
 
 
 \section{Ablation Studies}
+\label{sec:ablation}
+
+In this section, we are going to look at different ablations of the presented methods and how the individual components impact the performance. In particular, for \divcams, we analyze different methods of resetting the masks (mask batching) in \Cref{sec:ablation_study_batching} and see how additional methods that are supposed to improve the underlying class activation maps impact performance in \Cref{sec:ablation_study_batching}. On top of that, for \prodrop, we evaluate the effect of self-challenging for different negative weights in \Cref{sec:abl_self_challenging}, as well as the impact of the additional intra-loss factor in \Cref{sec:intra_loss}.
+
+\subsection{Hyperparameter Distributions \& Schedules}
+\label{sec:abl-distr}
+For the mask batching ablation study we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask-batching}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is always scheduled with a step-decay which decays the learning rate by factor $0.1$ at epoch $80/100$.
+\begin{table}[!htbp]
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+         & \textbf{Hyperparameter} & \textbf{Distribution} \\
+        \midrule
+        $\alpha$ & learning rate & $\loguni{-5}{-1}$ \\
+        $\mathcal{B}$ & batch size  & $\floor{\logunitwo{3}{9}}$ \\
+        $\gamma$ & weight decay  & $\loguni{-6}{-2}$ \\
+        $p$ & feature drop factor  & $1/3$ \\
+        $b$ & batch drop factor  & $\uni{0}{1}$ \\
+         \bottomrule 
+    \end{tabular}
+    \caption[Hyperparameters and distributions used for the mask batching ablation study]{Hyperparameters and distributions used in random search for the mask batching ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$ and $\floor{\cdot}$ is the floor operator.}
+    \label{tab:abl-distributions-mask-batching}
+\end{table}
+
+For the mask ablation study, we use \adam \cite{Kingma2015} and the distributions from \Cref{tab:abl-distributions-mask}. When the batch drop factor is scheduled, we use an increasing linear schedule while the learning rate is \emph{not} scheduled. This corresponds to the tuning distributions provided in \domainbed which are also used for all the main results and all other ablations. If not marked otherwise, each experiment evaluates $20$ hyperparameter samples, similar to what is suggested in \domainbed.
+
+\begin{table}[!htbp]
+\small
+    \centering
+    \begin{tabular}{lll}
+        \toprule
+        & \textbf{Hyperparameter} & \textbf{Distribution} \\
+        \midrule
+        $\alpha$ & learning rate & $\loguni{-5}{-3.5}$ \\
+        $\mathcal{B}$ & batch size  & $\floor{\logunitwo{3}{5.5}}$ \\
+        $\gamma$ & weight decay  & $\loguni{-6}{-2}$ \\
+        $p$ & feature drop factor  & $\uni{0.2}{0.5}$ \\
+        $b$ & batch drop factor  & $\uni{0}{1}$ \\
+        $\lambda_1$ & hnc factor & $\loguni{-3}{-1}$ \\
+        $k$ & negative classes & $\mathrm{num\_classes} - 1$ \\
+        $\theta_{tap}$ & tap factor & $\uni{0}{1}$ \\
+        $\lambda_2$ & adversarial factor & $\loguni{-2}{2}$ \\
+        $s$ &disc per gen step & $\floor{\logunitwo{0}{3}}$ \\
+        $\eta$ & gradient penalty & $\loguni{-2}{1}$ \\
+        $\omega_s$ & mlp width & $512$ \\
+        $\omega_d$ & mlp depth & $3$ \\
+        $\omega_{dr}$ & mlp dropout & $0.5$ \\
+        $\lambda_3$ & mmd factor & $\loguni{-1}{1}$ \\
+        \bottomrule 
+    \end{tabular}
+    \caption[Hyperparameters and distributions used for the mask ablation study]{Hyperparameters and distributions used in random search for the mask ablation study. $\logunix{a}{b}$ denotes a log-uniform distribution between $a$ and $b$ for base $x$, the uniform distribution is denoted as $\uni{a}{b}$, $\floor{\cdot}$ is the floor operator, and $[\cdot]$ represents a choice.}
+    \label{tab:abl-distributions-mask}
+\end{table}
 
 \subsection{\divcam: Mask Batching}
 \label{sec:ablation_study_batching}
@@ -459,7 +498,7 @@ We combine our masks with other methods from domain generalization, as well as m
 
 We observe that, surprisingly, none of the methods have a positive effect for training domain validation even though some of them exhibit better performance for oracle validation. Notably, especially the CDANN approach tends to exhibit a high 
 standard deviation for some of the domains (\eg art) which suggests that this approach can be fine-tuned when only reporting performance on a single seed. However, since we are looking for a method which reliably provides competitive results, regardless of the used seed and without needing extensive fine-tuning, we disregard this option.
-\begin{table}[!htbp]
+\begin{table}[t]
 \small
 %\renewcommand{\arraystretch}{1.2}
     \centering
@@ -491,7 +530,11 @@ standard deviation for some of the domains (\eg art) which suggests that this ap
 \subsection{\prodrop: Self-Challenging}
 \label{sec:abl_self_challenging}
 
-\begin{table}[ht]
+\Cref{tab:scabl} shows the ablation results for the self-challenging addition. We observe that for most negative weights, adding self-challenging results in an performance increase. Most notably, this occurs for cases where the performance without self-challenging is very poor such as $w_{c,j} = -0.2\; \forall j: \prot \notin \prots_c$,  $w_{c,j} = -1.0\; \forall j: \prot \notin \prots_c$, or $w_{c,j} = 0.0\; \forall j: \prot \notin \prots_c$. Generally, in cases where it does not lead to a performance increase, the downside seems to be very small where we at most drop by 0.5\% performance for $w_{c,j} = -0.5\; \forall j: \prot \notin \prots_c$. 
+
+If we look at the performance changes solely based on the different negative weights, we can't observe any consistent trends. In fact, it is very surprising that small changes such as from  $w_{c,j} = -0.1$ to $w_{c,j} = -0.2$ without self-challenging can lead to a 2\% performance change. 
+
+\begin{table}[t]
     \centering
     \begin{tabular}{lcccccc}
     \toprule
@@ -519,7 +562,7 @@ standard deviation for some of the domains (\eg art) which suggests that this ap
     \bottomrule
     \end{tabular}
     \caption[Self-challenging performance comparison for different negative class weights]{Performance comparison for different negative class weights on the PACS dataset without (top) and with self-challenging (bottom)  using training-domain validation and a ResNet-18 backbone. The feature and batch drop factors are kept constant with $p=0.5$ and $b=\frac{1}{3}$, a linear schedule from $a$ to $b$ throughout training is denoted with $a \to b$.}
-    \label{tab:screl}
+    \label{tab:scabl}
 \end{table}
 
 
@@ -527,6 +570,8 @@ standard deviation for some of the domains (\eg art) which suggests that this ap
 
 \subsection{\prodrop: Intra-Loss}
 \label{sec:intra_loss}
+
+\Cref{tab:intrabl} shows the ablation results for different intra factor strengths $\lambda_6$ with and without self-challenging. As expected, if the intra factor grows too large, performance degrades. For smaller values of $\lambda_6$ without self-challenging, we can observe a consistent performance increase of varying degrees similar to what self-challenging is able to gain. However, an additional intra factor does \emph{not} increase performance on top of self-challenging. As already introduced in \Cref{sec:divpro}, this further suggests that the self-challenging enforces these structures up to the near-optimal extend and any additional intra loss factor only hinders performance.
 
 \begin{table}[ht]
     \centering
@@ -540,26 +585,22 @@ standard deviation for some of the domains (\eg art) which suggests that this ap
      -0.5 & \ding{55} & 92.9 $\pm$ 0.8 & 82.4 $\pm$ 0.4 & 73.5 $\pm$ 1.6 & 73.4 $\pm$ 2.0 & 80.6 $\pm$ 0.7 \\
      -1.0 & \ding{55} & 94.7 $\pm$ 0.4 & 80.4 $\pm$ 0.6 & 73.9 $\pm$ 0.9 & 75.2 $\pm$ 1.8 & 81.1 $\pm$ 0.7 \\
       \midrule
-      \phantom{-}0.0 & \ding{51} & 94.6 $\pm$ 0.2 & 81.6 $\pm$ 1.2 & 72.9 $\pm$ 0.4 & $77.0 \pm 1.6$ & $81.5 \pm 0.2$ \\
+      \phantom{-}0.0 & \ding{51} & 94.6 $\pm$ 0.2 & 81.6 $\pm$ 1.2 & 72.9 $\pm$ 0.4 & $\tabtop{77.0 \pm 1.6}$ & $81.5 \pm 0.2$ \\
       -0.1 & \ding{51} & 94.6 $\pm$ 0.3 & 82.6 $\pm$ 0.9 & 72.2 $\pm$ 0.5 & 75.4 $\pm$ 0.1 & 81.2 $\pm$ 0.3 \\
       -0.2 & \ding{51} & 94.1 $\pm$ 0.1 & 81.9 $\pm$ 0.2 & 73.3 $\pm$ 0.7 & 75.8 $\pm$ 0.9 & 81.2 $\pm$ 0.1 \\
       -0.3 & \ding{51} & 94.8 $\pm$ 0.2 & 81.5 $\pm$ 0.1 & 75.1 $\pm$ 0.0 & 74.5 $\pm$ 0.4 & 81.5 $\pm$ 0.2 \\
       -0.4 & \ding{51} & 93.9 $\pm$ 0.5 & 82.4 $\pm$ 0.2 & 74.3 $\pm$ 1.3 & 76.1 $\pm$ 1.1 & 81.7 $\pm$ 0.2 \\
-      -0.5 & \ding{51} & 93.6 $\pm$ 0.6 & 82.1 $\pm$ 0.9 & 76.4 $\pm$ 0.9 & 76.3 $\pm$ 0.6 & $\tabtop{82.1 \pm 0.6}$ \\
+      -0.5 & \ding{51} & 93.6 $\pm$ 0.6 & 82.1 $\pm$ 0.9 & $\tabtop{76.4 \pm 0.9}$ & 76.3 $\pm$ 0.6 & $\tabtop{82.1 \pm 0.6}$ \\
       -0.6 & \ding{51} & 93.8 $\pm$ 0.6 & 82.1 $\pm$ 0.3 & 75.7 $\pm$ 0.2 & 73.1 $\pm$ 3.1 & 81.2 $\pm$ 1.0 \\
-      -0.7 & \ding{51} & 94.0 $\pm$ 0.4 & 82.9 $\pm$ 1.2 & 74.1 $\pm$ 0.5 & 76.3 $\pm$ 1.0 & $81.8 \pm 0.4$ \\
+      -0.7 & \ding{51} & 94.0 $\pm$ 0.4 & $\tabtop{82.9 \pm 1.2}$ & 74.1 $\pm$ 0.5 & 76.3 $\pm$ 1.0 & $81.8 \pm 0.4$ \\
       -0.8 & \ding{51} & 94.1 $\pm$ 0.5 & 81.8 $\pm$ 0.3 & 75.5 $\pm$ 0.2 & 72.7 $\pm$ 0.3 & $81.0 \pm 0.1$ \\
-      -1.0 & \ding{51} & 95.1 $\pm$ 0.6 & 80.7 $\pm$ 1.5 & 74.5 $\pm$ 1.1 & 73.7 $\pm$ 1.2 & 81.0 $\pm$ 0.4 \\
-      -2.0 & \ding{51} & 94.3 $\pm$ 0.3 & 82.9 $\pm$ 0.5 & 75.1 $\pm$ 1.0 & 75.0 $\pm$ 1.1 & 81.8 $\pm$ 0.5 \\
+      -1.0 & \ding{51} & $\tabtop{95.1 \pm 0.6}$ & 80.7 $\pm$ 1.5 & 74.5 $\pm$ 1.1 & 73.7 $\pm$ 1.2 & 81.0 $\pm$ 0.4 \\
+      -2.0 & \ding{51} & 94.3 $\pm$ 0.3 & $\tabtop{82.9 \pm 0.5}$ & 75.1 $\pm$ 1.0 & 75.0 $\pm$ 1.1 & 81.8 $\pm$ 0.5 \\
       -3.0 & \ding{51} & 94.5 $\pm$ 0.3 & 79.8 $\pm$ 1.0 & 74.9 $\pm$ 1.0 & 71.2 $\pm$ 0.4 & 80.1 $\pm$ 0.3 \\
       -10.0 & \ding{51} & 90.8 $\pm$ 3.7 & 80.2 $\pm$ 0.3 & 72.9 $\pm$ 0.1 & 75.0 $\pm$ 1.8 & 79.7 $\pm$ 0.6 \\
-      -100.0 & \ding{51} & 72.0 $\pm$ 11.4 & 76.3 $\pm$ 2.2 & 73.0 $\pm$ 1.1 & 69.1 $\pm$ 2.6 & 72.6 $\pm$ 4.0 \\
+      -100.0 & \ding{51} & 72.0 $\pm$ 11. & 76.3 $\pm$ 2.2 & 73.0 $\pm$ 1.1 & 69.1 $\pm$ 2.6 & 72.6 $\pm$ 4.0 \\
     \bottomrule
     \end{tabular}
     \caption[Self-challenging performance comparison for different intra factors]{Performance comparison for different intra factors on the PACS dataset without (top) and with self-challenging (bottom)  using training-domain validation and a ResNet-18 backbone. The feature and batch drop factors are kept constant with $p=0.5$ and $b=\frac{1}{3}$, negative weight is $-1.0$.}
-    \label{tab:screl}
+    \label{tab:intrabl}
 \end{table}
-
-\subsection{\prodrop: Distance Metrics}
-L2 better than cosine: \citep{SnellSZ17}
-distance metrics: \citep{BanerjeeMDG04}
