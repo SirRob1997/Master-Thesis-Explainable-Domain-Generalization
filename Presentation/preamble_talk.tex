@@ -1,24 +1,32 @@
 %!TEX root = talk.tex
 
 % serif fonts for mathematics
-%\usefonttheme[onlymath]{serif}
-
+\usefonttheme[onlymath]{serif}
 \usepackage{animate}
 \usepackage{textcase,marvosym,cancel,booktabs,colortbl,nicefrac,ifsym}
 \usepackage{fourier-orns}
-\usepackage{amsmath,amssymb,graphicx,tikz,pgfplots,colonequals,mathtools} % MnSymbol
+\usepackage{amsmath,amssymb,graphicx,tikz,pgfplots,colonequals,mathtools, pgf} % MnSymbol
 \usepackage{booktabs,multirow,multicol}
 \usepackage{pifont} % for the dingbats in the line search plots
 % \usepackage{stix} % for \sumint
-
+\usepackage{tabularx, array}
+\usepackage{multirow}
 \usepackage{multido}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+\renewcommand\tabularxcolumn[1]{b{#1}}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+\newcolumntype{C}{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}c}
+
 \usepackage{makecell}
 \usepackage{soul} % for better underline with ul{}
-\usetikzlibrary{tikzmark,decorations.pathreplacing,calc}
+\usetikzlibrary{tikzmark,decorations.pathreplacing,calc, arrows, automata}
 
 %% not used with xetex
 \usepackage{microtype}
 \usepackage[utf8]{inputenc}
+\usepackage{fontawesome}
 
 % a few colours, for general use.
 \definecolor{lred}{RGB}{200,0,0}
@@ -31,10 +39,12 @@
 \definecolor{MPG}{RGB}{000,125,122}
 \definecolor{lMPG}{RGB}{000,190,189}
 \definecolor{ora}{HTML}{cc7a00} 
+\definecolor{twitter}{RGB}{29,161,242} 
 \definecolor{lblu}{HTML}{7DA7D9}%PS blue
 
 % Color scheme of the Eberhard-Karls University
 \definecolor{TUred}{RGB}{141,45,57}
+\definecolor{darkred}{RGB}{141,45,57}
 \definecolor{TUdark}{RGB}{55,65,74}
 \definecolor{TUgold}{RGB}{174,159,109}
 \definecolor{TUgray}{RGB}{175,179,183}
@@ -212,7 +222,7 @@ quaternary}{parent=palette primary,use=palette primary,bg=dgre}
 \DeclareTextFontCommand{\emph}{\color{TUred}\bfseries} % } changed from \em
 
 %% Macros
-\newcommand{\g}{\mid} 
+%\newcommand{\g}{\mid} 
 \newcommand{\de}{\partial}
 \renewcommand{\d}{\:\mathrm{d}} 
 \newcommand{\Exp}{\mathsf{E}}
@@ -245,7 +255,7 @@ quaternary}{parent=palette primary,use=palette primary,bg=dgre}
 \newcommand{\erf}{\operatorname{erf}}
 \newcommand{\ce}{\colonequals}
 \newcommand{\ec}{\equalscolon}
-\newcommand{\tr}{\operatorname{tr}}
+%\newcommand{\tr}{\operatorname{tr}}
 \newcommand{\rk}{\operatorname{rk}}
 
 \makeatletter
@@ -282,7 +292,7 @@ quaternary}{parent=palette primary,use=palette primary,bg=dgre}
 \newcommand{\vect}[1]{\vv{#1}}
 % \newcommand{\vect}[1]{\overrightharpoon{#1}}
 \renewcommand{\O}{\mathcal{O}}
-\newcommand{\GP}{\mathcal{GP}}
+%\newcommand{\GP}{\mathcal{GP}}
 \newcommand{\Id}{I} 
 \newcommand{\II}{\mathbb{I}}
 
@@ -296,9 +306,9 @@ quaternary}{parent=palette primary,use=palette primary,bg=dgre}
 \DeclareMathOperator*{\sumint}{\mathpalette\superimpose{{\int}{\sum}}}
 % \newcommand{\ostimes}{\circledast}
 
-\newcommand{\y}{\vec{y}}
-\newcommand{\x}{\vec{x}}
-\newcommand{\X}{\vec{X}}
+%\newcommand{\y}{\vec{y}}
+%\newcommand{\x}{\vec{x}}
+%\newcommand{\X}{\vec{X}}
 \newcommand{\bX}{\mathbb{X}}
 \newcommand{\const}{\mathrm{const.}}
 
@@ -396,60 +406,61 @@ size=5pt, inner sep=0pt]
 \newlength{\figwidth}
 
 % algorithms
-\usepackage{algorithm}
-\usepackage{algpseudocode}
-\algrenewcommand{\algorithmiccomment}[1]{\hfill {$\sslash$ \scriptsize #1}}
-\algrenewcommand\alglinenumber[1]{\tiny #1}
+\usepackage[ruled, linesnumbered]{algorithm2e}
+\DontPrintSemicolon
+% \usepackage{algpseudocode}
+% \algrenewcommand{\algorithmiccomment}[1]{\hfill {$\sslash$ \scriptsize #1}}
+% \algrenewcommand\alglinenumber[1]{\tiny #1}
 
 
-% %%%%%% adding vertical bars to algorithmicx. Based on a response at 
-% % http://tex.stackexchange.com/questions/52473/is-it-possible-to-have-connecting-loop-lines-like-algorithm2e-in-algorithmic/52778#52778
-\makeatletter
-% This is the vertical rule that is inserted
-\def\therule{\makebox[\algorithmicindent][l]{\hspace*{.5em}\vrule height .75\baselineskip depth .25\baselineskip}}%
+% % %%%%%% adding vertical bars to algorithmicx. Based on a response at 
+% % % http://tex.stackexchange.com/questions/52473/is-it-possible-to-have-connecting-loop-lines-like-algorithm2e-in-algorithmic/52778#52778
+% \makeatletter
+% % This is the vertical rule that is inserted
+% \def\therule{\makebox[\algorithmicindent][l]{\hspace*{.5em}\vrule height .75\baselineskip depth .25\baselineskip}}%
 
-\newtoks\therules% Contains rules
-\therules={}% Start with empty token list
-\def\appendto#1#2{\expandafter#1\expandafter{\the#1#2}}% Append to token list
-\def\gobblefirst#1{% Remove (first) from token list
-  #1\expandafter\expandafter\expandafter{\expandafter\@gobble\the#1}}%
-\def\LState{\State\unskip\the\therules}% New line-state
-\def\pushindent{\appendto\therules\therule}%
-\def\popindent{\gobblefirst\therules}%
-\def\printindent{\unskip\the\therules}%
-\def\printandpush{\printindent\pushindent}%
-\def\popandprint{\popindent\printindent}%
+% \newtoks\therules% Contains rules
+% \therules={}% Start with empty token list
+% \def\appendto#1#2{\expandafter#1\expandafter{\the#1#2}}% Append to token list
+% \def\gobblefirst#1{% Remove (first) from token list
+%   #1\expandafter\expandafter\expandafter{\expandafter\@gobble\the#1}}%
+% \def\LState{\State\unskip\the\therules}% New line-state
+% \def\pushindent{\appendto\therules\therule}%
+% \def\popindent{\gobblefirst\therules}%
+% \def\printindent{\unskip\the\therules}%
+% \def\printandpush{\printindent\pushindent}%
+% \def\popandprint{\popindent\printindent}%
 
-%      ***      DECLARED LOOPS      ***
-% (from algpseudocode.sty)
-\algdef{SE}[WHILE]{While}{EndWhile}[1]
-  {\printandpush\algorithmicwhile\ #1\ \algorithmicdo}
-  {\popandprint\algorithmicend\ \algorithmicwhile}%
-\algdef{SE}[FOR]{For}{EndFor}[1]
-  {\printandpush\algorithmicfor\ #1\ \algorithmicdo}
-  {\popandprint\algorithmicend\ \algorithmicfor}%
-\algdef{S}[FOR]{ForAll}[1]
-  {\printindent\algorithmicforall\ #1\ \algorithmicdo}%
-\algdef{SE}[LOOP]{Loop}{EndLoop}
-  {\printandpush\algorithmicloop}
-  {\popandprint\algorithmicend\ \algorithmicloop}%
-\algdef{SE}[REPEAT]{Repeat}{Until}
-  {\printandpush\algorithmicrepeat}[1]
-  {\popandprint\algorithmicuntil\ #1}%
-\algdef{SE}[IF]{If}{EndIf}[1]
-  {\printandpush\algorithmicif\ #1\ \algorithmicthen}
-  {\popandprint\algorithmicend\ \algorithmicif}%
-\algdef{C}[IF]{IF}{ElsIf}[1]
-  {\popandprint\pushindent\algorithmicelse\ \algorithmicif\ #1\ \algorithmicthen}%
-\algdef{Ce}[ELSE]{IF}{Else}{EndIf}
-  {\popandprint\pushindent\algorithmicelse}%
-\algdef{SE}[PROCEDURE]{Procedure}{EndProcedure}[2]
-   {\printandpush\algorithmicprocedure\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
-   {\popandprint\algorithmicend\ \algorithmicprocedure}%
-\algdef{SE}[FUNCTION]{Function}{EndFunction}[2]
-   {\printandpush\algorithmicfunction\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
-   {\popandprint\algorithmicend\ \algorithmicfunction}%
-\makeatother
+% %      ***      DECLARED LOOPS      ***
+% % (from algpseudocode.sty)
+% \algdef{SE}[WHILE]{While}{EndWhile}[1]
+%   {\printandpush\algorithmicwhile\ #1\ \algorithmicdo}
+%   {\popandprint\algorithmicend\ \algorithmicwhile}%
+% \algdef{SE}[FOR]{For}{EndFor}[1]
+%   {\printandpush\algorithmicfor\ #1\ \algorithmicdo}
+%   {\popandprint\algorithmicend\ \algorithmicfor}%
+% \algdef{S}[FOR]{ForAll}[1]
+%   {\printindent\algorithmicforall\ #1\ \algorithmicdo}%
+% \algdef{SE}[LOOP]{Loop}{EndLoop}
+%   {\printandpush\algorithmicloop}
+%   {\popandprint\algorithmicend\ \algorithmicloop}%
+% \algdef{SE}[REPEAT]{Repeat}{Until}
+%   {\printandpush\algorithmicrepeat}[1]
+%   {\popandprint\algorithmicuntil\ #1}%
+% \algdef{SE}[IF]{If}{EndIf}[1]
+%   {\printandpush\algorithmicif\ #1\ \algorithmicthen}
+%   {\popandprint\algorithmicend\ \algorithmicif}%
+% \algdef{C}[IF]{IF}{ElsIf}[1]
+%   {\popandprint\pushindent\algorithmicelse\ \algorithmicif\ #1\ \algorithmicthen}%
+% \algdef{Ce}[ELSE]{IF}{Else}{EndIf}
+%   {\popandprint\pushindent\algorithmicelse}%
+% \algdef{SE}[PROCEDURE]{Procedure}{EndProcedure}[2]
+%   {\printandpush\algorithmicprocedure\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
+%   {\popandprint\algorithmicend\ \algorithmicprocedure}%
+% \algdef{SE}[FUNCTION]{Function}{EndFunction}[2]
+%   {\printandpush\algorithmicfunction\ \textproc{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}%
+%   {\popandprint\algorithmicend\ \algorithmicfunction}%
+% \makeatother
 
 %%%% fiddling with lists:
 % \usepackage{enumitem}

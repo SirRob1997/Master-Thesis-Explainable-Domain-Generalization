@@ -1,6 +1,7 @@
 \documentclass[10pt,usepdftitle=false,aspectratio=169]{beamer}
 
 \input{preamble_talk}
+\input{commands}
 
 \usetikzlibrary{external}
 %\tikzexternalize[mode=list and make]
@@ -12,9 +13,9 @@
 
 \tikzexternaldisable
 \begin{frame}
-  \title{{\bf Prototype Networks for Domain Generalization}\newline Recap and next possible steps
+  \title{{\bf Explainability-aided Domain Generalization}\newline Master Thesis
   \vspace*{-.7cm}}
-  \author{Robin M. Schmidt \vspace{-1cm}} \date{15 May 2020}
+  \author{Robin M. Schmidt \vspace{-1cm}} \date{02 March 2021}
 
   \vspace{-1.5cm}
   \maketitle 
@@ -63,84 +64,538 @@
 %  \blackslidetext{This is a black slide for summaries or take-aways while the next slide is to draw attention to the speaker since there is no visual input for the listeners}
 %  %\blackslide
 
-\begin{frame}{Model overview}
-\framesubtitlecite{Current Model Architecture}{\cite{ChenLTBRS19}}
+\begin{frame}{Introduction}
+\framesubtitlecite{Tumor segmentation}{\cite{AlBadawy2018}}
 \begin{figure}
     \centering
-    \includegraphics[scale=0.15,trim={2.5cm 26cm 2.5cm 0},clip]{fig/architecture-1.png}
-    \label{fig:my_label}
+    \includegraphics[width=\textwidth]{fig/medical.PNG}
 \end{figure}
-\ribbon{To be precise, there are $2$ convolutional layers, a ReLU, and a Sigmoid between $f$ and $g_p$}
 \end{frame}
 
-\begin{frame}{Model overview}
-\framesubtitlecite{Current Losses}{\cite{ChenLTBRS19}}
-Each class has a pre-specified number of prototypes e.g. $10$:
-\vspace{0.3cm}
-\begin{itemize}
-    \item \emph{Cross Entropy:} For Classification Error
-    \begin{equation}
-        \operatorname{CrsEnt}\left(h \circ g_{\mathbf{p}} \circ f\left(\mathbf{x}_{\mathbf{i}}\right), \mathbf{y}_{\mathbf{i}}\right)
-    \end{equation}
-    \item \emph{Cluster Loss:}  Each training image should have a latent patch that is close to at least one prototype of its own class
-    \begin{equation}
-\text { Clst }=\frac{1}{n} \sum_{i=1}^{n} \min _{j: \mathbf{p}_{j} \in \mathbf{P}_{y_{i}}} \min_{\mathbf{z} \in \text { patches }\left(f\left(\mathbf{x}_{i}\right)\right)}\left\|\mathbf{z}-\mathbf{p}_{j}\right\|_{2}^{2}
-\end{equation}
-\item \emph{Separation loss:}
-Every latent patch of a training image should stay away from the prototypes not of its own class
+\begin{frame}{Introduction}
+\framesubtitlecite{Tumor segmentation}{\cite{AlBadawy2018}}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.85\textwidth]{fig/tumor.PNG}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Introduction}
+\framesubtitle{High-Level Task Overview}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.65\textwidth]{fig/DG.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Introduction}
+\framesubtitlecite{Learning setups}{\cite{gulrajani2020search}}
+    \begin{table}
+    \centering
+    \begin{tabular}{lll}
+    \toprule
+    \textbf{Setup} & \textbf{Training inputs}  & \textbf{Testing inputs} \\
+    \midrule
+        Generative learning & $U_{\env_1}$ & $\emptyset$ \\ 
+        Unsupervised learning & $U_{\env_1}$ & $U_{\env_1}$  \\ 
+        Supervised learning & $L_{\env_1}$ & $U_{\env_1}$ \\ 
+        Semi-supervised learning & $L_{\env_1}, U_{\env_1}$ & $U_{\env_1}$ \\ 
+        Multitask learning & $L_{\env_1}, \ldots, L_{\env_s}$ & $U_{\env_1}, \ldots, U_{\env_s}$ \\ 
+        Continual (lifelong) learning & $L_{\env_1}, \ldots, L_{\env_\infty}$ & $U_{\env_1}, \ldots, U_{\env_\infty}$ \\ 
+        Domain Adaptation & $L_{\env_1}, \ldots, L_{\env_s}, U_{\env_t}$ & $U_{\env_t}$ \\ 
+        Transfer learning & $U_{\env_1}, \ldots, U_{\env_s}, L_{\env_t}$ & $U_{\env_t}$ \\ 
+        \emph{Domain generalization} & $L_{\env_1}, \ldots, L_{\env_s}$ & $U_{\env_t}$ \\ 
+    \bottomrule
+    \end{tabular}
+    \caption[Differences in learning setups]{Differences in learning setups adapted from: \cite{gulrajani2020search}. For each environment $\env$ the labeled and unlabeled datasets are denoted as $L_\env$ and $U_\env$ respectively.}
+    \label{tab:learning_setups}
+\end{table}
+\end{frame}
+
+\begin{frame}{Introduction}
+\framesubtitlecite{Samples across popular datasets}{}
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{lcYYYY}
+    \toprule
+    \textbf{Dataset}  & \textbf{Reference} & $\env^1$   &  $\env^2$ & $\env^3$ & $\env^4$ \\
+    \midrule
+          %%
+       \multirow{7}{*}{\textbf{Office-Home}} & \multirow{7}{*}{\cite{VenkateswaraECP17}} & \domainsize{Art} & \domainsize{Clipart} & \domainsize{Product} & \domainsize{Real} \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env0Art_1_idx61_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env1Clipart_5_idx24_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env2Product_14_idx67_class0.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env3Real World_44_idx13_class0.png} \\
+        & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env0Art_18_idx176_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env1Clipart_12_idx199_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env2Product_19_idx261_class3.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/OfficeHome_env3Real World_20_idx300_class3.png} \\
+        \addlinespace
+        %%
+       \multirow{7}{*}{\textbf{VLCS}} & \multirow{7}{*}{\cite{FangXR13}} & \domainsize{V} & \domainsize{L} & \domainsize{C} & \domainsize{S} \\ 
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/voc_bird.jpg}  &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/labelme_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/caltech_bird.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/sun_bird.jpg} \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/voc_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/labelme_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/caltech_car.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/sun_car.jpg} \\
+    \bottomrule
+    \end{tabularx}
+    \caption{Samples for two different classes across domains for popular datasets}
+    \label{tab:common_examples}
+\end{table}
+\end{frame}
+
+
+
+\begin{frame}{Introduction}
+\framesubtitlecite{Samples across popular datasets}{}
+\begin{table}
+    \centering
+    \begin{tabularx}{\textwidth}{lcYYYY}
+    \toprule
+    \textbf{Dataset}  & \textbf{Reference} & $\env^1$   &  $\env^2$ & $\env^3$ & $\env^4$ \\
+    \midrule
+       %%
+       \multirow{7}{*}{\textbf{Terra Incognita}} & \multirow{7}{*}{\cite{BeeryHP18}} & \domainsize{L100} & \domainsize{L38} & \domainsize{L43} & \domainsize{L46} \\ 
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env0location_100_22_idx685_class4.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env1location_38_5_idx2429_class4.png} &
+       \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env2location_43_45_idx2058_class4.png} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env3location_46_6_idx2012_class4.png} \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env0location_100_0_idx823_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env1location_38_35_idx2747_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env2location_43_38_idx2211_class5.png} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/TerraIncognita_env3location_46_37_idx2142_class5.png} \\
+       \addlinespace
+       %%
+       \multirow{7}{*}{\textbf{PACS}} & \multirow{7}{*}{\cite{LiYSH17}}  & \domainsize{Art} & \domainsize{Cartoon} & \domainsize{Photo} & \domainsize{Sketch} \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/dog_1.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/dog_2.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/dog_3.jpg} &  \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/dog_4.png} \\
+       & & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/elephant_1.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/elephant_2.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/elephant_3.jpg} & \includegraphics[height=\imagequadsize, width=\imagequadsize]{fig/elephant_4.png} \\
+    \bottomrule
+    \end{tabularx}
+    \caption{Samples for two different classes across domains for popular datasets}
+    \label{tab:common_examples}
+\end{table}
+\end{frame}
+
+
+\begin{frame}{Introduction}
+\framesubtitlecite{The intuitive baseline}{}
+\emph{Ordinary empirical risk:}
 \begin{equation}
-\text { Sep }=-\frac{1}{n} \sum_{i=1}^{n} \min _{j: \mathbf{p}_{j} \notin \mathbf{P}_{y_{i}}} \min_{\mathbf{z} \in \text{patches}\left(f\left(\mathbf{x}_{i}\right)\right)}\left\|\mathbf{z}-\mathbf{p}_{j}\right\|_{2}^{2}
+    \riske =\frac{1}{n} \sum_{i=1}^n \lossi{\f{\xxi}}{\yyi},
 \end{equation}
-\end{itemize}
-\end{frame}
+\vspace{0.5cm}
 
-\begin{frame}{Current Training}
-    Initialize the weights of fully connected layer with $w=1$ for prototypes of the corresponding class and $w=-0.5$ for the others.
-    \begin{figure}
-    \centering
-    \includegraphics[scale=0.2,trim={2.5cm 20cm 2.5cm 0},clip]{fig/training1.png}
-    \label{fig:my_label}
-\end{figure}
-\end{frame}
-
-\begin{frame}{Current Training}
-    Train \emph{only} prototype layer for warmup period of $100$ steps:
-    \begin{figure}
-    \centering
-    \includegraphics[scale=0.2,trim={2.5cm 20cm 2.5cm 0},clip]{fig/training2.png}
-    \label{fig:my_label}
-\end{figure}
-\end{frame}
-
-\begin{frame}{Current Training}
-    Train the featurizer and the prototype layer jointly for the rest of the epochs:
-    \begin{figure}
-    \centering
-    \includegraphics[scale=0.2,trim={2.5cm 19.5cm 2.5cm 0},clip]{fig/training3.png}
-    \label{fig:my_label}
-\end{figure}
-\end{frame}
-
-\begin{frame}{Next Steps}
-This already achieves \emph{good performance}, next steps to think about:
-\vspace{0.3cm}
-\begin{itemize}
-    \item Final tuning of the fully connected layer to stop ``negative'' reasoning process as done in \cite{ChenLTBRS19}:
-    \begin{equation}
-\min _{w_{h}} \frac{1}{n} \sum_{i=1}^{n} \operatorname{CrsEnt}\left(h \circ g_{\mathbf{p}} \circ f\left(\mathbf{x}_{\mathbf{i}}\right), \mathbf{y}_{\mathbf{i}}\right)+\lambda \sum_{k=1}^{K} \sum_{j: \mathbf{p}_{j} \notin \mathbf{P}_{k}}\left|w_{h}^{(k, j)}\right|
+\uncover<2->{\emph{Assumption:} Minimizing the empirical risk over all source domains achieves good generalization
+\begin{equation}
+\label{eq:domain_risk_emp}
+    \riske = \frac{1}{s} \sum_{\env \in \envs} \frac{1}{n_\env} \sum_{i=1}^{n_\env} \lossi{\f{\xxi^{\env}}} {\yyi^{\env}}
 \end{equation}
-    \uncover<2->{\item Add a loss term to enforce that different prototypes for one class are not focusing on the same latent patch (e.g.~Cosine Similarity + ReLU / Jensen-Shannon Divergence / any other distance)}
-    \uncover<3->{\item Make use of domain information (We should discuss this)}
-    \uncover<4->{\item Self-Challenging based on the Top-p closest patches to prototypes}
-    \uncover<5->{\item Visualization: \cite{ChenLTBRS19} use the closest image patch, there are other works which use a decoder \cite{LiLCR18}, or another approach \cite{aralajewHRAV19}.}
-    \uncover<6->{\item Explore different distance metrics besides $L^2$ (Bregman Divergences \cite{BanerjeeMDG04})}
-\end{itemize}
-    
+}
 \end{frame}
+
+\begin{frame}{Related Work}
+\framesubtitle{What have other people tried?}
+    \begin{itemize}
+        \item \emph{Learning invariant features:} Kernel methods, adversarial approaches
+        \item \emph{Model Ensembling:} Domain-specific batch norm, predictors
+        \item \emph{Meta-Learning:} Learning the domain-shift
+        \item \emph{Data Augmentation:} \textsc{Mixup} merge samples, remove textural information
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Related Work}
+\framesubtitlecite{What have other people tried?: Model-Ensembling}{\cite{ManciniBC018}}
+\includegraphics[width=\textwidth]{fig/title_dg.PNG}
+\end{frame}
+
+\begin{frame}{Related Work}
+\framesubtitlecite{What have other people tried?: Model-Ensembling}{\cite{ManciniBC018}}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{fig/method-dg2.pdf}
+    \caption{Ensemble Method Overview}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Related Work}
+\framesubtitlecite{What have other people tried?: Data Augmentation}{\cite{RahmanFBS19}}
+\includegraphics[width=\textwidth]{fig/aug_dg.PNG}
+\end{frame}
+
+\begin{frame}{Related Work}
+\framesubtitlecite{What have other people tried?: Data Augmentation}{\cite{RahmanFBS19}}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.49\textwidth]{fig/GAN_Images_f.pdf}
+    \includegraphics[width=0.49\textwidth]{fig/WACV1_1_ff.pdf}
+    \caption{Data Augmentation Overview}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\blackslidetext{\centering \large How does Representation Self Challenging approach this task?}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{Relationship to Explainability}{\cite{huang2020selfchallenging}}
+\centering
+ \includegraphics[width=0.5\textwidth]{fig/RSCExplainability_1.pdf}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{Relationship to Explainability}{\cite{huang2020selfchallenging}}
+\centering
+ \includegraphics[width=0.5\textwidth]{fig/RSCExplainability_2.pdf}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{Relationship to Explainability}{\cite{huang2020selfchallenging}}
+\centering
+ \includegraphics[width=0.5\textwidth]{fig/RSCExplainability_3.pdf}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{Relationship to Explainability}{\cite{huang2020selfchallenging}}
+\centering
+ \includegraphics[width=0.5\textwidth]{fig/RSCExplainability_4.pdf}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{A high level overview}{\cite{huang2020selfchallenging}}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.65\textwidth]{fig/intro.pdf}
+        \caption{Overview of Representation Self-Challenging}
+        \label{fig:my_label}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{What they actually do}{}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{fig/rsc_model_spatial_avg.pdf}
+        \caption{Overview of Representation Self-Challenging: Spatial-Wise Average}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{What they actually do}{}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{fig/rsc_model_channel_avg.pdf}
+        \caption{Overview of Representation Self-Challenging: Channel-Wise Average}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{What they actually do}{}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{fig/rsc_change.pdf}
+        \caption{Overview of Representation Self-Challenging: Mask Permutation}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Representation Self-Challenging}
+\framesubtitlecite{What they actually do}{}
+\begin{algorithm}[H]
+\small
+    \SetAlgoLined
+    \SetNoFillComment
+    \SetKwInOut{Input}{Input}
+    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $f$, \textcolor{MPG}{$b$}, epochs $T$}
+    %\KwResult{how to write algorithm with \LaTeX2e }
+    %initialization\;
+    \BlankLine
+    \While{$epoch \leq T$}{
+    \For{every sample (or batch) $\mathbf{x}, \mathbf{y}$}{
+    Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
+    Compute gradient $\featureg$ w.r.t features  \;
+    \textcolor{MPG}{Compute $\featuregal$ by avg. pooling using two different methods}\;
+    \textcolor{MPG}{Duplicate $\featurega$ along channel/spatial dimension for initial shape}\;
+    Compute mask $\mathbf{m}_{i,j}$ \;
+    Mask features to obtain $\Tilde{\mathbf{z}} = \mathbf{m} \odot \mathbf{z}$ \tcp*[r]{Evaluate effect of preliminary mask $\downarrow$}
+    \textcolor{MPG}{Compute change $\mathbf{c}$} \;
+    \textcolor{MPG}{Revert masking for specific samples} \;
+    Mask features $\Tilde{\mathbf{z}} = \mathbf{z} \odot \mathbf{m}$ \;
+    Compute loss $\mathcal{L}(w(\Tilde{\mathbf{z}}), \mathbf{y})$ and backpropagate to whole network
+    }
+}
+\caption{Spatial- and Channel-Wise RSC}
+\label{alg:SpatialRSC}
+\end{algorithm}
+\end{frame}
+
+
+\blackslidetext{\centering \large Is this the best we can do in terms of pushing the network to different discriminative features? What about using explainability methods to guide the network?
+}
+
+\begin{frame}{Diversified Class Activation Maps (\divcam)}
+\framesubtitlecite{Our first approach}{}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{Figures/Chapter4/model_figure-cropped.pdf}
+        \caption{Overview of Diversified Class Activation Maps}
+    \end{figure}
+    \vspace{0.2cm}
+    \uncover<2->{\ribbon{By reconstructing to Grad-CAMs we properly take into account the content of the image!}}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{Outside of \domainbed}{}
+    \begin{table}
+\small
+\centering
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Algorithm} & \textbf{Ref.} & \textbf{Backbone} & \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} &  \textbf{Avg.} \\
+\midrule
+\textsc{Baseline}		&\cite{CarlucciDBCT19}				&	ResNet-18	&	$95.73$		&	$77.85$		&	$74.86$		&	$67.74$		&	$79.05$		 \\
+\textsc{MASF}		&\cite{DouCKG19}					&	ResNet-18	&	$94.99$		&	$80.29$		&	$77.17$		&	$71.69$		&	$81.03$		 \\
+\textsc{Epi-FCR}		&\cite{LiZYLSH19}					&	ResNet-18	&	$93.90$		&	$82.10$		&	$77.00$		&	$73.00$		&	$81.50$		 \\
+\textsc{JiGen}		&\cite{CarlucciDBCT19}				&	ResNet-18	&	$96.03$		&	$79.42$		&	$75.25$		&	$71.35$		&	$80.51$		\\
+\textsc{MetaReg}		& \cite{BalajiSC18}					&	ResNet-18	&	$95.50$		&	$\tabtop{83.70}$		&	$77.20$		&	$70.30$		&	$81.70$		\\
+\textsc{RSC} (reported)	& \cite{huang2020selfchallenging}		&	ResNet-18	&	$95.99$		&	$83.43$		&	$80.31$		&	$80.85$		&	$85.15$		\\
+\textsc{RSC} (reproduced) & \cite{huang2020selfchallenging}		&	ResNet-18	&	$93.73$		&	$80.41$		&	$77.53$		&	$80.79$		&	$83.12$		\\
+\divcams			&     (ours)						&	ResNet-18	&	$\tabtop{96.11}$		&	$80.27$		&	$\tabtop{77.82}$		&	$\tabtop{82.18}$		&	$\tabtop{84.10}$		\\
+\bottomrule
+\end{tabular}
+\caption{Performance comparison for PACS outside of the \domainbed framework with the official data split.}
+\label{tab:official}
+\end{table}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{Within \domainbed}{}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/results.PNG}
+    \caption{Performance comparison for PACS within the \domainbed framework.}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Class Activation Maps}
+\framesubtitlecite{Visualizations of the CAMs throughout training}{}
+    \begin{figure}
+    \centering
+    \begin{tabularx}{\textwidth}{YYYY}
+       \textbf{Original} & \textbf{Step 300} & \textbf{Step 2700} & \textbf{Step 4500} \\[0.2cm]
+         \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/img66.png} &  \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/giraffe1_step_300_cam.png} & \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/giraffe1_step_2700_cam.png} &
+        \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/giraffe1_step_4500_cam.png} \\
+       \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/img76.png} &
+        \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/elephant1_step_300_cam.png} &
+        \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/elephant1_step_2700_cam.png} &
+        \includegraphics[width=\imagequadsizecams]{Figures/Chapter4/elephant1_step_4500_cam.png} \\
+    \end{tabularx}
+    \caption[Used class activation maps in \divcams throughout training]{Used class activation maps for \divcams in update step $300/5000$, $2700/5000$, and $4500/5000$ using a ResNet-50 backbone.}
+    \label{fig:cams_and_masks_divcam}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Some improvements for the class activation maps}
+\framesubtitlecite{Global Average Pooling bias: Threshold average pooling layer}{\cite{Bae2020RethinkingCAM}}
+    \begin{figure}
+        \centering
+        \includegraphics[width=\textwidth]{Presentation/fig/small_activations.PNG}
+        \caption{Problems of the GAP layer: \cite{Bae2020RethinkingCAM}}
+    \end{figure}
+     \uncover<2->{\ribbon{They propose an average pooling which is a tradeoff between max and avg pooling}}
+\end{frame}
+
+\begin{frame}{Some improvements for the class activation maps}
+\framesubtitlecite{Global Average Pooling bias: Smoothing negative CAMs}{\cite{sun2020fixing}}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{Presentation/fig/neg_maps.PNG}
+        \caption{Problems of the negative CAMs: \cite{sun2020fixing}}
+    \end{figure}
+     \uncover<2->{\ribbon{They propose minimizing the KL-divergence between an uniform map and the negative CAMs}}
+\end{frame}
+
+\begin{frame}{Ablation study for the ``improvements''}
+\framesubtitlecite{These approaches do not help for training-domain validation}{}
+    \begin{table}
+    \footnotesize
+%\renewcommand{\arraystretch}{1.2}
+    \centering
+    \begin{tabular}{lccccc}
+    \toprule
+    \textbf{Name} &  \textbf{P} & \textbf{A} & \textbf{C} & \textbf{S} & \textbf{Avg.} \\
+    \midrule 
+    \divcam & $\tabtop{97.6\pm0.4}$ & $85.2\pm0.8$ & $80.5\pm0.7$ & $78.3\pm0.8$ & $\tabtop{85.4\pm0.5}$ \\
+    \divcams & $97.3\pm0.4$ & $86.2\pm1.4$ & $79.1\pm2.2$ & $\tabtop{79.2\pm0.1}$ & $85.4\pm0.2$ \\
+    \divcams + TAP & $96.9\pm0.1$ & $85.1\pm1.5$ & $78.7\pm0.4$ & $75.3\pm0.6$ & $84.0\pm0.4$ \\
+    \divcams + HNC & $97.2\pm0.3$ & $\tabtop{87.2\pm0.9}$ & $79.2\pm0.6$ & $71.7\pm3.1$ & $83.8\pm0.4$ \\
+    \divcams + CDANN & $97.5\pm0.4$ & $85.2\pm2.8$ & $78.3\pm2.0$ & $74.8\pm0.9$ & $84.0\pm1.5$ \\
+    \divcams + MMD & $97.0\pm0.2$ & $85.4\pm1.0$ & $\tabtop{81.5\pm0.4}$ & $75.8\pm3.5$ & $84.9\pm1.1$ \\
+    CAM + CDANN & $97.2\pm0.3$ & $86.7\pm0.5$ & $77.3\pm1.7$ & $71.5\pm1.3$ & $83.2\pm0.8$ \\
+    \midrule
+    \tdivcam & $96.2\pm1.2$ & $87.0\pm0.5$ & $82.0\pm0.9$ & $80.8\pm0.6$ & $86.5\pm0.1$ \\
+    \tdivcams & $97.2\pm0.3$ & $86.5\pm0.4$ & $83.0\pm0.5$ & $82.2\pm0.1$ & $87.2\pm0.1$ \\
+    \divcams + TAP* & $97.3\pm0.3$ & $87.2\pm0.8$ & $\tabtop{83.2\pm0.8}$ & $\tabtop{82.8\pm0.2}$ & $\tabtop{87.6\pm0.0}$ \\
+    \divcams + HNC*  & $97.3\pm0.2$ & $\tabtop{87.4\pm0.5}$ & $81.4\pm0.6$ & $79.7\pm1.1$ & $86.5\pm0.4$ \\
+    \divcams + CDANN* & $\tabtop{97.3\pm0.5}$ & $85.9\pm1.2$ & $80.6\pm0.4$ & $80.9\pm0.4$ & $86.2\pm0.2$ \\
+    \divcams + MMD* & $\tabtop{97.3\pm0.5}$ & $86.8\pm0.7$ & $83.2\pm0.4$ & $80.9\pm0.7$ & $87.1\pm0.4$ \\
+    CAM + CDANN* & $97.2\pm0.4$ & $86.7\pm0.5$ & $81.9\pm0.2$ & $80.6\pm0.7$ & $86.6\pm0.2$ \\
+    \bottomrule
+    \end{tabular}
+    \caption{Ablation study for the \divcam masks on the PACS dataset using training-domain validation (top) and oracle validation denoted with * (bottom). We use a ResNet-50 backbone and $20$ hyperparameter samples.}
+    \label{tab:scam_masks}
+\end{table}
+\end{frame}
+
+\blackslidetext{\centering \large How about applying prototypical networks to domain generalization?}
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{An intuitive baseline}{\cite{ChenLTBRS19}}
+    \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{Figures/Chapter4/prototype_agnostic-cropped.pdf}
+    \caption{Domain-agnostic Prototype Layer}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{An intuitive baseline}{\cite{ChenLTBRS19}}
+Domain-Agnostic cluster and separation losses:
+   \begin{alignat}{3}
+\label{eq:prototype_losses}
+    \mathcal{L}_{\mathrm{clst}} &= &&\frac{1}{n} \sum_{i=1}^n \min_{j: \prot \in \prots_{\yyi}} \min_{\zpatch \in \text{patches}(\zz)} \left\|\zpatch - \prot\right\|^2_2\\
+    \mathcal{L}_{\mathrm{sep}} &= -&&\frac{1}{n} \sum_{i=1}^n \min_{j: \prot \notin \prots_{\yyi}} \min_{\zpatch \in \text{patches}(\zz)} \left\|\zpatch - \prot\right\|^2_2.
+\end{alignat}
+\end{frame}
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{Sometimes not all prototypes are used properly}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figures/Chapter4/2021-01-21-ProDropIncorrectWeight-1.0SAVEResNet18oracle_validation_trial1.pdf}
+    \caption{Pairwise learned prototype distances}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Improvements: Prototype Dropping (\prodrop)}
+\framesubtitlecite{Sometimes not all prototypes are used properly}{}
+    \begin{algorithm}[H]
+    \SetAlgoLined
+    \SetKwInOut{Input}{Input}
+    \Input{Data $\mathbf{X}, \mathbf{Y}$ with $\mathbf{x}_i \in \mathbb{R}^{H \times W \times 3}$, drop factor $p,b$, epochs $T$}
+    \BlankLine
+    \While{$epoch \leq T$}{
+        \For{every batch $\mathbf{x}, \mathbf{y}$}{
+            Extract features $\mathbf{z} = \phi(\mathbf{x})$ \tcp*[r]{$\mathbf{z}$ has shape  $\mathbb{R}^{H_\mathbf{z} \times W_\mathbf{z} \times K} $}
+            Compute $\unit(\zz)$\;
+            Compute $\mathbf{m}_{c,j}$ \;
+            Adapt $\mathbf{m}_{c,j}$ \;
+            Compute $\mplayer(\zz)$ \;
+            Backpropagate loss $\mathcal{L}_{ce}(w(\mplayer(\zz)), \mathbf{y}) + \lambda_4 \mathcal{L}_{\mathrm{clst}} + \lambda_5 \mathcal{L}_{\mathrm{sep}}$ \;
+            }
+    }
+\caption{Prototype Dropping (\prodrop)}
+\label{alg:ProDrop}
+\end{algorithm}
+\end{frame}
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{Sometimes not all prototypes are used properly}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.9\textwidth]{Figures/Chapter4/2021-01-21-ProDropIncorrectWeight-1.0WithSCdrop_f0.5SAVEResNet18oracle_validation_trial1.pdf}
+    \caption{Pairwise learned prototype distances}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Improvements: Intra-Loss}
+\framesubtitlecite{Sometimes not all prototypes are used properly}{}
+\begin{equation}
+\label{eq:intra_loss}
+    \mathcal{L}_\mathrm{intra} = \sum_{\proti_i, \prot \in \prots_c} \lambda_{\ell_2} \underbrace{\left\|\proti_i - \prot  \right\|_2 \vphantom{\frac{\proti_i\prot}{\left\|\proti_i \right\|_2 \left\|\prot \right\|_2}}}_{\ell_2-\text{distance}} + \lambda_{\cdistance} \underbrace{ (1-\frac{\proti_i\prot}{\left\|\proti_i \right\|_2 \left\|\prot \right\|_2})}_{\text{cosine-distance}},
+\end{equation}
+\end{frame}
+
+\begin{frame}{Results on \prodrop and Intra-Loss}
+\framesubtitlecite{Self-Challenging helps!}{}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.7\textwidth]{Presentation/fig/intra_ablat.PNG}
+        \label{fig:my_label}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{Incorporating domain information}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{Figures/Chapter4/prototype_ensemble-cropped.pdf}
+    \caption{Ensemble Prototype Layer}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\blackslidetext{\centering \large So far the prototypes have been directly learned, but we can also utilize a support set of images!}
+
+
+\begin{frame}{Prototypical Networks for Domain Generalization}
+\framesubtitlecite{Support Set Prototypes with attention aligment: crossTransformers}{\cite{DoerschGZ20}}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/ctx-arch.pdf}
+    \caption{Support Set Prototypes with attention aligment}
+    \label{fig:my_label}
+\end{figure}
+\ribbon{We can do this for each domain separately and combine the final distance values!}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{\domainbed results for \dtransformers}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/res_full.PNG}
+    \caption{Full results for training-domain validation within \domainbed}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{\domainbed results for \dtransformers}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/res_full_2.PNG}
+    \caption{Full results for training-domain validation within \domainbed}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{\domainbed results for \dtransformers}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/res_full_test.PNG}
+    \caption{Full results for oracle-domain validation within \domainbed}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Results}
+\framesubtitlecite{\domainbed results for \dtransformers}{}
+    \begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{Presentation/fig/res_full_test_2.PNG}
+    \caption{Full results for oracle-domain validation within \domainbed}
+    \label{fig:my_label}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Conclusion \& Outlook}
+\framesubtitlecite{Some things to think about}{}
+    \begin{itemize}
+        \item \divcam works well and outperforms \rsc
+        \uncover<2->{\item \prodrop and \dtransformers can achieve very good performance depending on the backbone and dataset}
+        \uncover<3->{\item Upscaling $7 \times 7$ feature map to $14 \times 14$ to achieve big performance gains}
+        \uncover<4->{\item Even though \prodrop does well on ResNet-18 it doesn't generalize well to ResNet-50}
+        \uncover<5->{\item Clear ablation of the distance functions (maybe also metric learning)}
+        \uncover<6->{\item More sophisticated method for aggregating across domains in \dtransformers}
+    \end{itemize}
+    \vspace{1cm}
+    \uncover<7->{\ribbon{Overall: First stepping stone and analysis on explainability methods for DG, hopefully more to come!}}
+\end{frame}
+
 
 \begin{frame}[allowframebreaks]{References}
     \bibliographystyle{apalike}
-    \bibliography{01_bibliography}
+    \bibliography{thesis}
 \end{frame}
 
 \end{document}
